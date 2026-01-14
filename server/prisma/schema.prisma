@@ -1,0 +1,118 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Admin model - for admin users who can manage products
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String   // Will store hashed password
+  createdAt DateTime @default(now())
+}
+
+// User model - for regular users who can shop
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String   // Will store hashed password
+  name      String?
+  createdAt DateTime @default(now())
+  cart      Cart[]
+  wishlist  Wishlist[]
+  orders    Order[]
+}
+
+// Category model - for organizing products
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  imageUrl String    @default("")
+  products Product[] // One category can have many products
+}
+
+// Product model - main product information
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  images      String[] // Array of image URLs
+  stock       Int
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  cart        Cart[]
+  wishlist    Wishlist[]
+  orderItems  OrderItem[]
+}
+
+// Cart model - for user's shopping cart
+model Cart {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  productId Int
+  quantity  Int     @default(1)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+// Wishlist model - for user's wishlist
+model Wishlist {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  productId Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+// Order model - for user's orders
+model Order {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  totalAmount   Float
+  status        OrderStatus @default(PENDING)
+  shippingAddress String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items         OrderItem[]
+}
+
+// OrderItem model - individual items in an order
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Float   // Price at time of order
+  size      String?
+  color     String?
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([orderId, productId, size, color])
+}
+
+// Enum for order status
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
