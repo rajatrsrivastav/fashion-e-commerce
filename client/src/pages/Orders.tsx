@@ -147,8 +147,8 @@ export default function Orders() {
     );
   }
 
-  const activeOrders = orders.filter(o => o.status !== "delivered" && o.status !== "cancelled");
-  const completedOrders = orders.filter(o => o.status === "delivered" || o.status === "cancelled");
+  const activeOrders = orders.filter((o: Order) => o.status !== "delivered" && o.status !== "cancelled");
+  const completedOrders = orders.filter((o: Order) => o.status === "delivered" || o.status === "cancelled");
 
   if (orders.length === 0) {
     return (
@@ -194,7 +194,7 @@ export default function Orders() {
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
-            {orders.map((order) => (
+            {orders.map((order: Order) => (
               <OrderCard 
                 key={order.id} 
                 order={order} 
@@ -208,7 +208,7 @@ export default function Orders() {
             {activeOrders.length === 0 ? (
               <EmptyState message="No active orders" />
             ) : (
-              activeOrders.map((order) => (
+              activeOrders.map((order: Order) => (
                 <OrderCard 
                   key={order.id} 
                   order={order}
@@ -223,7 +223,7 @@ export default function Orders() {
             {completedOrders.length === 0 ? (
               <EmptyState message="No completed orders" />
             ) : (
-              completedOrders.map((order) => (
+              completedOrders.map((order: Order) => (
                 <OrderCard 
                   key={order.id} 
                   order={order}
@@ -256,7 +256,7 @@ function EmptyState({ message }: { message: string }) {
 }
 
 interface OrderCardProps {
-  order: typeof ordersData[0];
+  order: Order;
   isExpanded: boolean;
   onToggle: () => void;
 }
@@ -314,7 +314,7 @@ function OrderCard({ order, isExpanded, onToggle }: OrderCardProps) {
           <div className="p-6 border-b">
             <h4 className="font-semibold mb-4">Order Items</h4>
             <div className="space-y-4">
-              {order.items.map((item) => (
+              {order.items.map((item: OrderItem) => (
                 <div key={item.id} className="flex gap-4">
                   <div className="w-20 h-24 bg-gray-100 rounded-lg overflow-hidden shrink-0">
                     <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
@@ -334,7 +334,7 @@ function OrderCard({ order, isExpanded, onToggle }: OrderCardProps) {
           <div className="p-6 border-b">
             <h4 className="font-semibold mb-4">Order Tracking</h4>
             <div className="relative">
-              {order.trackingSteps.map((step, idx) => (
+              {order.trackingSteps.map((step: { status: string; date: string; completed: boolean }, idx: number) => (
                 <div key={idx} className="flex gap-4 pb-6 last:pb-0">
                   <div className="flex flex-col items-center">
                     <div className={`w-4 h-4 rounded-full ${step.completed ? 'bg-green-500' : 'bg-gray-200'}`} />

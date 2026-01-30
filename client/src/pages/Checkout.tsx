@@ -117,7 +117,7 @@ export default function Checkout() {
     }
   }, [cartItems, cartLoading, setLocation]);
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((sum: number, item: CartItem) => sum + item.product.price * item.quantity, 0);
   const shipping = subtotal > 1000 ? 0 : 99; // Free shipping over ₹1000
   const total = subtotal + shipping;
 
@@ -420,7 +420,7 @@ export default function Checkout() {
 
               {/* Items */}
               <div className="space-y-4 mb-6">
-                {cartItems.map((item) => (
+                {cartItems.map((item: CartItem) => (
                   <div key={item.id} className="flex gap-4">
                     <div className="w-16 h-20 bg-gray-100 rounded-lg overflow-hidden relative shrink-0">
                       <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />

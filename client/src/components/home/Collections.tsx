@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/carousel";
 
 export default function Collections() {
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setLocation] = useLocation();
 
@@ -27,7 +27,7 @@ export default function Collections() {
       });
   }, []);
 
-  const handleCategoryClick = (categoryName) => {
+  const handleCategoryClick = (categoryName: string) => {
     setLocation(`/shop?category=${encodeURIComponent(categoryName)}`);
   };
 
