@@ -47,7 +47,7 @@ export default function Checkout() {
   const { data: cartItems = [], isLoading: cartLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:4000/cart', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -70,7 +70,7 @@ export default function Checkout() {
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async (address: string) => {
-      const response = await fetch('http://localhost:4000/orders', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

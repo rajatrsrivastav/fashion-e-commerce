@@ -78,7 +78,7 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
       const token = localStorage.getItem('adminToken');
 
       // Make API call to backend
-      const response = await fetch('http://localhost:4000/admin/products', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

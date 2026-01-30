@@ -40,7 +40,7 @@ export default function ProductDetails() {
   useEffect(() => {
     if (id) {
       window.scrollTo(0, 0);
-      fetch(`http://localhost:4000/products/${id}`)
+      fetch(`${import.meta.env.VITE_API_URL}/products/${id}`)
         .then(res => res.json())
         .then(data => {
           if (data.product) {
@@ -75,7 +75,7 @@ export default function ProductDetails() {
 
     setIsAddingToCart(true);
     try {
-      const response = await fetch('http://localhost:4000/cart', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ export default function ProductDetails() {
 
     setIsAddingToWishlist(true);
     try {
-      const response = await fetch('http://localhost:4000/wishlist', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

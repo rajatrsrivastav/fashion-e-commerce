@@ -51,8 +51,8 @@ export default function Shop() {
       setLoading(true);
       // Make API call to backend
       const url = categoryParam 
-        ? `http://localhost:4000/products?category=${encodeURIComponent(categoryParam)}`
-        : 'http://localhost:4000/products';
+        ? `${import.meta.env.VITE_API_URL}/products?category=${encodeURIComponent(categoryParam)}`
+        : `${import.meta.env.VITE_API_URL}/products`;
         
       const response = await fetch(url);
       const data = await response.json();

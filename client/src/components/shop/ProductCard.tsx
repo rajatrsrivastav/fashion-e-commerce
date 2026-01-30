@@ -50,7 +50,7 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
 
     setIsAddingToCart(true);
     try {
-      const response = await fetch('http://localhost:4000/cart', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
 
     setIsAddingToWishlist(true);
     try {
-      const response = await fetch('http://localhost:4000/wishlist', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

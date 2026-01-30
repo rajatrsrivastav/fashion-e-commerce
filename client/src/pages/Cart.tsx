@@ -55,7 +55,7 @@ export default function Cart() {
   // Fetch cart items
   const fetchCartItems = async () => {
     try {
-      const response = await fetch('http://localhost:4000/cart', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -85,7 +85,7 @@ export default function Cart() {
 
     setUpdatingItem(productId);
     try {
-      const response = await fetch(`http://localhost:4000/cart/${productId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart/${productId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ export default function Cart() {
   // Remove item from cart
   const removeItem = async (productId: number) => {
     try {
-      const response = await fetch(`http://localhost:4000/cart/${productId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

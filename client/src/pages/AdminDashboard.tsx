@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:4000/admin/products', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/products`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
   // Fetch categories from backend
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:4000/categories');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`);
       const data = await response.json();
       if (response.ok) {
         setCategories(data.categories);
