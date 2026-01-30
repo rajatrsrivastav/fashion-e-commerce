@@ -30,7 +30,7 @@ export default function ProductList({ products, onProductDeleted, onProductEdit 
     try {
       const token = localStorage.getItem('adminToken');
 
-      const response = await fetch(`http://localhost:4000/admin/products/${productId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/products/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

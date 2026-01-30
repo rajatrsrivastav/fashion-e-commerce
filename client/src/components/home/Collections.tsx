@@ -13,7 +13,7 @@ export default function Collections() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    fetch('http://localhost:4000/categories')
+    fetch(`${import.meta.env.VITE_API_URL}/categories`)
       .then(res => res.json())
       .then(data => {
         // Handle both simple array or object with categories property

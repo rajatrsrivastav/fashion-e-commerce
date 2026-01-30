@@ -15,7 +15,7 @@ export default function Recommendations() {
   const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:4000/products')
+    fetch(`${import.meta.env.VITE_API_URL}/products`)
       .then(res => res.json())
       .then(data => {
         if (data.products) {
