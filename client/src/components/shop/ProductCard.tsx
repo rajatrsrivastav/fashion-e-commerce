@@ -130,13 +130,11 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
 
     setIsTogglingWishlist(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/toggle`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ productId: id }),
       });
 
       const data = await response.json();
