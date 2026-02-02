@@ -133,7 +133,7 @@ const checkWishlistStatus = async (req, res) => {
 const toggleWishlist = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { productId } = req.body;
+    const { productId } = req.params;
 
     if (!productId) {
       return res.status(400).json({ error: 'Product ID is required' });

@@ -8,8 +8,8 @@ const { verifyUser } = require('../middleware/auth');
 // POST /wishlist - Add item to wishlist
 router.post('/', verifyUser, wishlistController.addToWishlist);
 
-// PUT /wishlist/toggle - Toggle wishlist status (add/remove)
-router.put('/toggle', verifyUser, wishlistController.toggleWishlist);
+// PUT /wishlist/:productId - Toggle wishlist status (add/remove)
+router.put('/:productId', verifyUser, wishlistController.toggleWishlist);
 
 // GET /wishlist - Get user's wishlist
 router.get('/', verifyUser, wishlistController.getWishlist);
