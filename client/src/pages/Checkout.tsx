@@ -20,6 +20,7 @@ import {
   Building2,
   Loader2
 } from "lucide-react";
+import { Image } from "@unpic/react";
 
 interface CartItem {
   id: number;
@@ -423,7 +424,7 @@ export default function Checkout() {
                 {cartItems.map((item: CartItem) => (
                   <div key={item.id} className="flex gap-4">
                     <div className="w-16 h-20 bg-gray-100 rounded-lg overflow-hidden relative shrink-0">
-                      <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
+                      <Image src={item.product.images[0]} alt={item.product.name} layout="fullWidth" className="w-full h-full object-cover" background="auto" />
                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-black text-white text-xs rounded-full flex items-center justify-center">
                         {item.quantity}
                       </span>

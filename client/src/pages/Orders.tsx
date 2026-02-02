@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Image } from "@unpic/react";
 import {
   ChevronRight,
   Package,
@@ -317,7 +318,7 @@ function OrderCard({ order, isExpanded, onToggle }: OrderCardProps) {
               {order.items.map((item: OrderItem) => (
                 <div key={item.id} className="flex gap-4">
                   <div className="w-20 h-24 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                    <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                    <Image src={item.image} alt={item.title} layout="fullWidth" className="w-full h-full object-cover" background="auto" />
                   </div>
                   <div className="flex-1">
                     <h5 className="font-medium">{item.title}</h5>

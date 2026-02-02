@@ -9,10 +9,12 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Recommendations() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/products`)
@@ -21,8 +23,12 @@ export default function Recommendations() {
         if (data.products) {
           setProducts(data.products);
         }
+        setLoading(false);
       })
-      .catch(err => console.error('Error fetching recommended products:', err));
+      .catch(err => {
+        console.error('Error fetching recommended products:', err);
+        setLoading(false);
+      });
   }, []);
 
   const scrollToTop = () => {
@@ -61,11 +67,24 @@ export default function Recommendations() {
             className="w-full"
           >
             <CarouselContent className="-ml-4">
-              {products.map((product: any) => (
-                <CarouselItem key={product.id} className="pl-4 md:basis-1/2 lg:basis-1/4">
-                  <ProductCard {...product} />
-                </CarouselItem>
-              ))}
+              {loading ? (
+                // Skeleton loader while fetching
+                Array.from({ length: 4 }).map((_, idx) => (
+                  <CarouselItem key={idx} className="pl-4 md:basis-1/2 lg:basis-1/4">
+                    <div className="flex flex-col gap-3">
+                      <Skeleton className="aspect-[3/4] rounded-xl" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </CarouselItem>
+                ))
+              ) : (
+                products.map((product: any) => (
+                  <CarouselItem key={product.id} className="pl-4 md:basis-1/2 lg:basis-1/4">
+                    <ProductCard {...product} />
+                  </CarouselItem>
+                ))
+              )}
             </CarouselContent>
             <CarouselPrevious />
             <CarouselNext />

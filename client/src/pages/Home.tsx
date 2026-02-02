@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Truck, Shield, RefreshCw, Headphones } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Category {
   id: number;
@@ -127,9 +128,20 @@ const features = [
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
+            {loading ? (
+              // Skeleton loader while fetching
+              Array.from({ length: 4 }).map((_, idx) => (
+                <div key={idx} className="flex flex-col gap-3">
+                  <Skeleton className="aspect-[3/4] rounded-xl" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))
+            ) : (
+              featuredProducts.map((product) => (
+                <ProductCard key={product.id} {...product} />
+              ))
+            )}
           </div>
 
           <div className="flex justify-center mt-8 md:hidden">

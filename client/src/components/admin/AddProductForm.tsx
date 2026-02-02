@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X } from 'lucide-react';
+import { Image } from "@unpic/react";
 
 interface Category {
   id: number;
@@ -195,7 +196,7 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
             <div className="grid grid-cols-3 gap-4 mt-4">
               {images.map((url, index) => (
                 <div key={index} className="relative">
-                  <img src={url} alt={`Product ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                  <Image src={url} alt={`Product ${index + 1}`} layout="fullWidth" className="w-full h-24 object-cover rounded-lg" background="auto" />
                   <Button
                     type="button"
                     variant="destructive"

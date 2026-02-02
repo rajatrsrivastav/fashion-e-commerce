@@ -6,6 +6,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Collections() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -31,10 +32,6 @@ export default function Collections() {
     setLocation(`/shop?category=${encodeURIComponent(categoryName)}`);
   };
 
-  if (loading && categories.length === 0) {
-    return null; // Or a skeleton loader
-  }
-
   return (
     <section className="py-20 bg-white">
       <div className="container mx-auto px-4">
@@ -56,28 +53,40 @@ export default function Collections() {
             className="w-full"
           >
             <CarouselContent className="-ml-4">
-              {categories.map((item, idx) => (
-                <CarouselItem key={idx} className="pl-4 basis-1/2 md:basis-1/4 lg:basis-1/6">
-                  <div 
-                    onClick={() => handleCategoryClick(item.name)}
-                    className="flex flex-col items-center gap-4 group cursor-pointer p-2"
-                  >
-                    <motion.div 
-                      className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-transparent group-hover:border-black transition-all p-1"
-                      whileHover={{ scale: 1.05 }}
+              {loading ? (
+                // Skeleton loader while fetching
+                Array.from({ length: 6 }).map((_, idx) => (
+                  <CarouselItem key={idx} className="pl-4 basis-1/2 md:basis-1/4 lg:basis-1/6">
+                    <div className="flex flex-col items-center gap-4 p-2">
+                      <Skeleton className="w-24 h-24 md:w-32 md:h-32 rounded-full" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  </CarouselItem>
+                ))
+              ) : (
+                categories.map((item, idx) => (
+                  <CarouselItem key={idx} className="pl-4 basis-1/2 md:basis-1/4 lg:basis-1/6">
+                    <div 
+                      onClick={() => handleCategoryClick(item.name)}
+                      className="flex flex-col items-center gap-4 group cursor-pointer p-2"
                     >
-                      <div className="w-full h-full rounded-full overflow-hidden bg-gray-100">
-                        <img 
-                          src={item.imageUrl || "/placeholder-category.png"} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover" 
-                        />
-                      </div>
-                    </motion.div>
-                    <span className="font-medium text-sm md:text-base tracking-wide">{item.name}</span>
-                  </div>
-                </CarouselItem>
-              ))}
+                      <motion.div 
+                        className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-transparent group-hover:border-black transition-all p-1"
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <div className="w-full h-full rounded-full overflow-hidden bg-gray-100">
+                          <img 
+                            src={item.imageUrl || "/placeholder-category.png"} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover" 
+                          />
+                        </div>
+                      </motion.div>
+                      <span className="font-medium text-sm md:text-base tracking-wide">{item.name}</span>
+                    </div>
+                  </CarouselItem>
+                ))
+              )}
             </CarouselContent>
           </Carousel>
         </div>

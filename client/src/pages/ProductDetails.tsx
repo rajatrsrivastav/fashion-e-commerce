@@ -23,6 +23,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Image } from "@unpic/react";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -35,7 +42,8 @@ export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -53,6 +61,31 @@ export default function ProductDetails() {
           setLoading(false);
         });
     }
+  }, [id]);
+
+  // Check wishlist status
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      const token = localStorage.getItem('userToken');
+      if (!token || !id) return;
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/${id}/check`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setIsInWishlist(data.isInWishlist);
+        }
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      }
+    };
+
+    checkWishlistStatus();
   }, [id]);
 
   // Add to cart
@@ -111,8 +144,8 @@ export default function ProductDetails() {
     }
   };
 
-  // Add to wishlist
-  const addToWishlist = async () => {
+  // Toggle wishlist
+  const toggleWishlist = async () => {
     const token = localStorage.getItem('userToken');
     if (!token) {
       localStorage.setItem('redirectAfterLogin', `/product/${id}`);
@@ -120,10 +153,10 @@ export default function ProductDetails() {
       return;
     }
 
-    setIsAddingToWishlist(true);
+    setIsTogglingWishlist(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist`, {
-        method: 'POST',
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/toggle`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -134,31 +167,29 @@ export default function ProductDetails() {
       const data = await response.json();
 
       if (response.ok) {
+        setIsInWishlist(data.isInWishlist);
         toast({
-          title: 'Added to wishlist',
-          description: `${product.name} has been added to your wishlist`,
-        });
-      } else if (response.status === 400 && data.error === 'Item already in wishlist') {
-        toast({
-          title: 'Already in wishlist',
-          description: `${product.name} is already in your wishlist`,
+          title: data.isInWishlist ? 'Added to wishlist' : 'Removed from wishlist',
+          description: data.isInWishlist 
+            ? `${product.name} has been added to your wishlist`
+            : `${product.name} has been removed from your wishlist`,
         });
       } else {
         toast({
           title: 'Error',
-          description: 'Failed to add item to wishlist',
+          description: 'Failed to update wishlist',
           variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error('Error adding to wishlist:', error);
+      console.error('Error toggling wishlist:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add item to wishlist',
+        description: 'Failed to update wishlist',
         variant: 'destructive',
       });
     } finally {
-      setIsAddingToWishlist(false);
+      setIsTogglingWishlist(false);
     }
   };
 
@@ -205,10 +236,12 @@ export default function ProductDetails() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <img 
-                src={images[activeImage]} 
+              <Image
+                src={images[activeImage]}
                 alt={product.name}
+                layout="fullWidth"
                 className="w-full h-full object-cover"
+                background="auto"
               />
               <Badge className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-sm font-bold uppercase tracking-wider">
                 Sale
@@ -224,7 +257,7 @@ export default function ProductDetails() {
                     activeImage === idx ? 'border-black' : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                  <Image src={img} alt={`Thumb ${idx}`} layout="fullWidth" className="w-full h-full object-cover" background="auto" />
                 </button>
               ))}
             </div>
@@ -314,19 +347,43 @@ export default function ProductDetails() {
                 </div>
                 
                 <div className="flex flex-1 gap-2">
-                  <Button
-                    onClick={addToWishlist}
-                    disabled={isAddingToWishlist}
-                    variant="outline"
-                    size="icon"
-                    className="h-12 w-12 rounded-xl border-gray-200"
-                  >
-                    {isAddingToWishlist ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Heart className="w-5 h-5" />
-                    )}
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={toggleWishlist}
+                          disabled={isTogglingWishlist}
+                          variant="outline"
+                          size="icon"
+                          className={`h-12 w-12 rounded-xl border-2 transition-all duration-300 ${
+                            isInWishlist 
+                              ? 'border-red-500 bg-red-50 text-red-500 hover:bg-red-100 hover:border-red-600' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {isTogglingWishlist ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <motion.div
+                              animate={{ 
+                                scale: isTogglingWishlist ? [1, 1.2, 1] : 1,
+                              }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <Heart 
+                                className={`w-5 h-5 transition-all duration-300 ${
+                                  isInWishlist ? 'fill-current' : ''
+                                }`} 
+                              />
+                            </motion.div>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-gray-200">
                     <Share2 className="w-5 h-5" />
                   </Button>

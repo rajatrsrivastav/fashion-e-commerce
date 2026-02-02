@@ -86,4 +86,31 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  /* Wishlist heart animation */
+  @keyframes heartBeat {
+    0%, 100% {
+      transform: scale(1);
+    }
+    25% {
+      transform: scale(1.2);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+  
+  .animate-heart-beat {
+    animation: heartBeat 0.5s ease-in-out;
+  }
+  
+  /* Smooth fill transition */
+  .wishlist-heart {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .wishlist-heart.filled {
+    fill: currentColor;
+    transform: scale(1.05);
+  }
 }

@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Image } from "@unpic/react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ProductCardProps {
   id: number;
@@ -23,9 +30,35 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
 
   const displayImage = images && images.length > 0 ? images[0] : imageUrl;
+
+  // Check if product is in wishlist on mount
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/${id}/check`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setIsInWishlist(data.isInWishlist);
+        }
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [id]);
 
   // Add to cart
   const addToCart = async (e: React.MouseEvent) => {
@@ -83,8 +116,8 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
     }
   };
 
-  // Add to wishlist
-  const addToWishlist = async (e: React.MouseEvent) => {
+  // Toggle wishlist
+  const toggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation();
 
@@ -95,10 +128,10 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
       return;
     }
 
-    setIsAddingToWishlist(true);
+    setIsTogglingWishlist(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist`, {
-        method: 'POST',
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/toggle`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -109,31 +142,29 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
       const data = await response.json();
 
       if (response.ok) {
+        setIsInWishlist(data.isInWishlist);
         toast({
-          title: 'Added to wishlist',
-          description: `${name} has been added to your wishlist`,
-        });
-      } else if (response.status === 400 && data.error === 'Item already in wishlist') {
-        toast({
-          title: 'Already in wishlist',
-          description: `${name} is already in your wishlist`,
+          title: data.isInWishlist ? 'Added to wishlist' : 'Removed from wishlist',
+          description: data.isInWishlist 
+            ? `${name} has been added to your wishlist`
+            : `${name} has been removed from your wishlist`,
         });
       } else {
         toast({
           title: 'Error',
-          description: 'Failed to add item to wishlist',
+          description: 'Failed to update wishlist',
           variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error('Error adding to wishlist:', error);
+      console.error('Error toggling wishlist:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add item to wishlist',
+        description: 'Failed to update wishlist',
         variant: 'destructive',
       });
     } finally {
-      setIsAddingToWishlist(false);
+      setIsTogglingWishlist(false);
     }
   };
   
@@ -148,14 +179,12 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
       <Link href={`/product/${id}`}>
         <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-gray-100 cursor-pointer">
           {/* Product Image */}
-          <img 
-            src={displayImage} 
-            alt={name} 
+          <Image
+            src={displayImage || 'https://via.placeholder.com/400x500?text=No+Image'}
+            alt={name}
+            layout="fullWidth"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-            onError={(e) => {
-              // Fallback image if image fails to load
-              e.currentTarget.src = 'https://via.placeholder.com/400x500?text=No+Image';
-            }}
+            background="auto"
           />
 
           {/* Hover Overlay Actions */}
@@ -173,15 +202,37 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
           <ShoppingCart className="w-4 h-4 mr-2" />
           {isAddingToCart ? 'Adding...' : stock === 0 ? 'Out of Stock' : 'Add'}
         </Button>
-        <Button
-          onClick={addToWishlist}
-          disabled={isAddingToWishlist}
-          variant="secondary"
-          size="sm"
-          className="bg-white/90 hover:bg-white shadow-lg"
-        >
-          <Heart className={`w-4 h-4 ${isAddingToWishlist ? 'animate-pulse' : ''}`} />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={toggleWishlist}
+                disabled={isTogglingWishlist}
+                variant="secondary"
+                size="sm"
+                className={`bg-white/90 hover:bg-white shadow-lg transition-all duration-300 ${
+                  isInWishlist ? 'text-red-500 hover:text-red-600' : 'text-gray-600 hover:text-gray-700'
+                }`}
+              >
+                <motion.div
+                  animate={{ 
+                    scale: isTogglingWishlist ? [1, 1.2, 1] : 1,
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Heart 
+                    className={`w-4 h-4 transition-all duration-300 ${
+                      isInWishlist ? 'fill-current' : ''
+                    }`} 
+                  />
+                </motion.div>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Link href={`/product/${id}`}>
           <Button variant="secondary" size="icon" className="bg-white/90 hover:bg-white shadow-lg">
             <Eye className="w-4 h-4" />
