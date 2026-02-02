@@ -193,6 +193,39 @@ export default function ProductDetails() {
     }
   };
 
+  // Buy Now - Redirect to checkout with this product
+  const buyNow = () => {
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+      localStorage.setItem('redirectAfterLogin', `/product/${id}`);
+      setLocation('/login');
+      return;
+    }
+
+    if (!product || product.stock === 0) {
+      toast({
+        title: 'Out of Stock',
+        description: 'This product is currently out of stock',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Store buy now item in session storage
+    const buyNowItem = {
+      productId: parseInt(id!),
+      quantity: quantity,
+      product: {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        images: product.images || [product.imageUrl]
+      }
+    };
+    sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+    setLocation('/checkout?buyNow=true');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -407,7 +440,12 @@ export default function ProductDetails() {
                     'ADD TO CART'
                   )}
                 </Button>
-                <Button variant="outline" className="flex-1 h-14 text-lg font-bold border-2 border-black rounded-xl transition-all active:scale-95">
+                <Button 
+                  onClick={buyNow}
+                  disabled={!product || product.stock === 0}
+                  variant="outline" 
+                  className="flex-1 h-14 text-lg font-bold border-2 border-black rounded-xl transition-all active:scale-95"
+                >
                   BUY IT NOW
                 </Button>
               </div>

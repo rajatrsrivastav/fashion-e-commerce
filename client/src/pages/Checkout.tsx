@@ -43,9 +43,34 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [saveInfo, setSaveInfo] = useState(true);
   const [shippingAddress, setShippingAddress] = useState("");
+  
+  // Check if this is a Buy Now checkout
+  const isBuyNow = new URLSearchParams(window.location.search).get('buyNow') === 'true';
+  const [buyNowItem, setBuyNowItem] = useState<CartItem | null>(null);
+
+  // Load Buy Now item from session storage
+  useEffect(() => {
+    if (isBuyNow) {
+      const storedItem = sessionStorage.getItem('buyNowItem');
+      if (storedItem) {
+        try {
+          const item = JSON.parse(storedItem);
+          setBuyNowItem({
+            id: 0, // Temporary ID for buy now
+            userId: 0,
+            productId: item.productId,
+            quantity: item.quantity,
+            product: item.product
+          });
+        } catch (error) {
+          console.error('Error parsing buy now item:', error);
+        }
+      }
+    }
+  }, [isBuyNow]);
 
   // Fetch cart items
-  const { data: cartItems = [], isLoading: cartLoading } = useQuery({
+  const { data: cartData, isLoading: cartLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
@@ -68,9 +93,35 @@ export default function Checkout() {
     enabled: isAuthenticated,
   });
 
+  const cartItems = Array.isArray(cartData?.cartItems) ? cartData.cartItems : (Array.isArray(cartData) ? cartData : []);
+
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async (address: string) => {
+      // If Buy Now, create direct order
+      if (isBuyNow && buyNowItem) {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/orders/direct`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ 
+            productId: buyNowItem.productId,
+            quantity: buyNowItem.quantity,
+            shippingAddress: address 
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to create order');
+        }
+
+        return response.json();
+      }
+      
+      // Otherwise, create order from cart
       const response = await fetch(`${import.meta.env.VITE_API_URL}/orders`, {
         method: 'POST',
         headers: {
@@ -88,6 +139,11 @@ export default function Checkout() {
       return response.json();
     },
     onSuccess: (order) => {
+      // Clear buy now item from session storage
+      if (isBuyNow) {
+        sessionStorage.removeItem('buyNowItem');
+      }
+      
       toast({
         title: "Order Placed Successfully!",
         description: `Your order ${order.id} has been placed.`,
@@ -111,14 +167,17 @@ export default function Checkout() {
     }
   }, [isAuthenticated, setLocation]);
 
-  // Redirect to cart if empty
+  // Redirect to cart if empty (unless Buy Now)
   useEffect(() => {
-    if (!cartLoading && cartItems.length === 0) {
+    if (!isBuyNow && !cartLoading && Array.isArray(cartItems) && cartItems.length === 0) {
       setLocation('/cart');
     }
-  }, [cartItems, cartLoading, setLocation]);
+  }, [cartItems, cartLoading, setLocation, isBuyNow]);
 
-  const subtotal = cartItems.reduce((sum: number, item: CartItem) => sum + item.product.price * item.quantity, 0);
+  // Use Buy Now item if available, otherwise use cart items
+  const displayItems = isBuyNow && buyNowItem ? [buyNowItem] : cartItems;
+  
+  const subtotal = Array.isArray(displayItems) ? displayItems.reduce((sum: number, item: CartItem) => sum + item.product.price * item.quantity, 0) : 0;
   const shipping = subtotal > 1000 ? 0 : 99; // Free shipping over ₹1000
   const total = subtotal + shipping;
 
@@ -148,7 +207,7 @@ export default function Checkout() {
     );
   }
 
-  if (cartLoading) {
+  if (cartLoading && !isBuyNow) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -162,7 +221,7 @@ export default function Checkout() {
     );
   }
 
-  if (cartItems.length === 0) {
+  if (!isBuyNow && cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -421,7 +480,7 @@ export default function Checkout() {
 
               {/* Items */}
               <div className="space-y-4 mb-6">
-                {cartItems.map((item: CartItem) => (
+                {displayItems.map((item: CartItem) => (
                   <div key={item.id} className="flex gap-4">
                     <div className="w-16 h-20 bg-gray-100 rounded-lg overflow-hidden relative shrink-0">
                       <Image src={item.product.images[0]} alt={item.product.name} layout="fullWidth" className="w-full h-full object-cover" background="auto" />

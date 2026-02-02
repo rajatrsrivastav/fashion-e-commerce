@@ -188,7 +188,106 @@ function generateTrackingSteps(status, createdAt) {
   return steps;
 }
 
+// Create order directly from product (Buy Now)
+const createDirectOrder = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { productId, quantity, shippingAddress } = req.body;
+
+    if (!shippingAddress) {
+      return res.status(400).json({ error: 'Shipping address is required' });
+    }
+
+    if (!productId || !quantity || quantity < 1) {
+      return res.status(400).json({ error: 'Product ID and valid quantity are required' });
+    }
+
+    // Get product details
+    const product = await prisma.product.findUnique({
+      where: { id: productId }
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Check stock availability
+    if (quantity > product.stock) {
+      return res.status(400).json({
+        error: `Insufficient stock for ${product.name}. Available: ${product.stock}`
+      });
+    }
+
+    // Calculate total
+    const totalAmount = product.price * quantity;
+
+    // Create order in transaction
+    const result = await prisma.$transaction(async (prisma) => {
+      // Create order
+      const order = await prisma.order.create({
+        data: {
+          userId,
+          totalAmount,
+          shippingAddress,
+          status: 'PENDING',
+          items: {
+            create: {
+              productId: productId,
+              quantity: quantity,
+              price: product.price,
+              size: 'M', // Default size, can be customized
+              color: 'Standard' // Default color, can be customized
+            }
+          }
+        },
+        include: {
+          items: {
+            include: { product: true }
+          }
+        }
+      });
+
+      // Update product stock
+      await prisma.product.update({
+        where: { id: productId },
+        data: { stock: { decrement: quantity } }
+      });
+
+      return order;
+    });
+
+    // Format response
+    const formattedOrder = {
+      id: `VYR-${result.createdAt.getFullYear()}-${String(result.id).padStart(6, '0')}`,
+      date: result.createdAt.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      }),
+      status: result.status.toLowerCase(),
+      total: result.totalAmount,
+      items: result.items.map(item => ({
+        id: item.id.toString(),
+        title: item.product.name,
+        image: item.product.images[0] || '',
+        size: item.size,
+        color: item.color,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      address: result.shippingAddress,
+      trackingSteps: generateTrackingSteps(result.status, result.createdAt)
+    };
+
+    res.status(201).json(formattedOrder);
+  } catch (error) {
+    console.error('Error creating direct order:', error);
+    res.status(500).json({ error: 'Failed to create order' });
+  }
+};
+
 module.exports = {
   getUserOrders,
-  createOrder
+  createOrder,
+  createDirectOrder
 };

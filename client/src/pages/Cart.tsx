@@ -167,7 +167,7 @@ export default function Cart() {
   const discount = appliedCoupon === 'SAVE10' ? subtotal * 0.1 : 
                   appliedCoupon === 'WELCOME20' ? subtotal * 0.2 : 
                   appliedCoupon === 'FIRST50' ? subtotal * 0.5 : 0;
-  const shipping = subtotal >= 999 ? 0 : 49;
+  const shipping = cartItems.length === 0 ? 0 : (subtotal >= 999 ? 0 : 49);
   const total = subtotal - discount + shipping;
 
   if (loading) {
@@ -342,7 +342,7 @@ export default function Cart() {
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span>{shipping === 0 ? <span className="text-green-600">FREE</span> : `₹${shipping.toFixed(2)}`}</span>
+                  <span>{cartItems.length === 0 ? '₹0.00' : (shipping === 0 ? <span className="text-green-600">FREE</span> : `₹${shipping.toFixed(2)}`)}</span>
                 </div>
               </div>
 
@@ -354,7 +354,10 @@ export default function Cart() {
               </div>
 
               <Link href="/checkout">
-                <Button className="w-full h-12 bg-black hover:bg-gray-800 text-base">
+                <Button 
+                  className="w-full h-12 bg-black hover:bg-gray-800 text-base"
+                  disabled={cartItems.length === 0}
+                >
                   Proceed to Checkout <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
