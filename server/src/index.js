@@ -83,14 +83,5 @@ app.listen(PORT, () => {
   console.log(`
   ✅ Server is running!
   🌐 URL: http://localhost:${PORT}
-  📝 API Endpoints:
-     - Admin Login: POST http://localhost:${PORT}/admin/login
-     - Admin Register: POST http://localhost:${PORT}/admin/register
-     - User Login: POST http://localhost:${PORT}/auth/login
-     - User Register: POST http://localhost:${PORT}/auth/register
-     - Get Products: GET http://localhost:${PORT}/products
-     - Get Categories: GET http://localhost:${PORT}/categories
-     - Cart: GET/POST http://localhost:${PORT}/cart
-     - Wishlist: GET/POST http://localhost:${PORT}/wishlist
   `);
 });
