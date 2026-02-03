@@ -1,5 +1,4 @@
-name: CI/CD for EC2 Deployment
-
+name: Backend CI/CD Deploy 
 on:
   push:
     branches:
@@ -25,8 +24,8 @@ jobs:
         run: npm install
       
       - name: Run Tests (if available)
-        run: npm test || echo "No tests specified"
-        continue-on-error: true
+        run: npm test
+        continue-on-error: false
 
   deploy:
     runs-on: ubuntu-latest
@@ -41,8 +40,8 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
           script: |
-            cd /path/to/fashion-e-commerce/server
+            set -e
+            cd ${{ secrets.APP_DIR }}
             git pull origin main
             npm install
-            npm run build || echo "No build script"
-            pm2 restart fashion-e-commerce-server || pm2 start src/index.js --name fashion-e-commerce-server
+            pm2 restart fashion-backend
