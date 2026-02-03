@@ -1,13 +1,16 @@
 import { motion } from "framer-motion";
+import { Image } from "@unpic/react";
 
 export default function Hero() {
   return (
     <section className="relative w-full h-[80vh] bg-black overflow-hidden">
       <div className="absolute inset-0">
-        <img 
-          src='./HERO.png' 
-          alt="Streetwear Collection" 
+        <Image
+          src='./HERO.png'
+          alt="Streetwear Collection"
+          layout="fullWidth"
           className="w-full h-full object-cover opacity-60"
+          background="auto"
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
       </div>

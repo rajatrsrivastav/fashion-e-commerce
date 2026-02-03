@@ -1,7 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
-// Get user's orders
 const getUserOrders = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -18,7 +16,6 @@ const getUserOrders = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    // Format orders for frontend
     const formattedOrders = orders.map(order => ({
       id: `VYR-${order.createdAt.getFullYear()}-${String(order.id).padStart(6, '0')}`,
       date: order.createdAt.toLocaleDateString('en-US', {
@@ -48,7 +45,6 @@ const getUserOrders = async (req, res) => {
   }
 };
 
-// Create order from cart
 const createOrder = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -58,7 +54,6 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ error: 'Shipping address is required' });
     }
 
-    // Get user's cart items
     const cartItems = await prisma.cart.findMany({
       where: { userId },
       include: { product: true }
@@ -68,7 +63,6 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ error: 'Cart is empty' });
     }
 
-    // Check stock availability
     for (const item of cartItems) {
       if (item.quantity > item.product.stock) {
         return res.status(400).json({
@@ -77,14 +71,11 @@ const createOrder = async (req, res) => {
       }
     }
 
-    // Calculate total
     const totalAmount = cartItems.reduce((total, item) => {
       return total + (item.product.price * item.quantity);
     }, 0);
 
-    // Create order in transaction
     const result = await prisma.$transaction(async (prisma) => {
-      // Create order
       const order = await prisma.order.create({
         data: {
           userId,
@@ -108,7 +99,6 @@ const createOrder = async (req, res) => {
         }
       });
 
-      // Update product stock
       for (const item of cartItems) {
         await prisma.product.update({
           where: { id: item.productId },
@@ -116,7 +106,6 @@ const createOrder = async (req, res) => {
         });
       }
 
-      // Clear cart
       await prisma.cart.deleteMany({
         where: { userId }
       });
@@ -124,7 +113,6 @@ const createOrder = async (req, res) => {
       return order;
     });
 
-    // Format response
     const formattedOrder = {
       id: `VYR-${result.createdAt.getFullYear()}-${String(result.id).padStart(6, '0')}`,
       date: result.createdAt.toLocaleDateString('en-US', {
@@ -154,7 +142,6 @@ const createOrder = async (req, res) => {
   }
 };
 
-// Helper function to generate tracking steps
 function generateTrackingSteps(status, createdAt) {
   const steps = [
     { status: 'Order Placed', date: createdAt.toLocaleDateString(), completed: true },
@@ -174,11 +161,9 @@ function generateTrackingSteps(status, createdAt) {
 
   const currentIndex = statusIndex[status] || 0;
 
-  // Update completion status
   for (let i = 0; i < steps.length; i++) {
     steps[i].completed = i <= currentIndex;
     if (i > 0 && steps[i].completed && !steps[i].date) {
-      // Add estimated dates for completed steps
       const date = new Date(createdAt);
       date.setDate(date.getDate() + i);
       steps[i].date = date.toLocaleDateString();
@@ -188,7 +173,6 @@ function generateTrackingSteps(status, createdAt) {
   return steps;
 }
 
-// Create order directly from product (Buy Now)
 const createDirectOrder = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -202,7 +186,6 @@ const createDirectOrder = async (req, res) => {
       return res.status(400).json({ error: 'Product ID and valid quantity are required' });
     }
 
-    // Get product details
     const product = await prisma.product.findUnique({
       where: { id: productId }
     });
@@ -211,19 +194,15 @@ const createDirectOrder = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Check stock availability
     if (quantity > product.stock) {
       return res.status(400).json({
         error: `Insufficient stock for ${product.name}. Available: ${product.stock}`
       });
     }
 
-    // Calculate total
     const totalAmount = product.price * quantity;
 
-    // Create order in transaction
     const result = await prisma.$transaction(async (prisma) => {
-      // Create order
       const order = await prisma.order.create({
         data: {
           userId,
@@ -235,8 +214,8 @@ const createDirectOrder = async (req, res) => {
               productId: productId,
               quantity: quantity,
               price: product.price,
-              size: 'M', // Default size, can be customized
-              color: 'Standard' // Default color, can be customized
+              size: 'M',
+              color: 'Standard'
             }
           }
         },
@@ -247,7 +226,6 @@ const createDirectOrder = async (req, res) => {
         }
       });
 
-      // Update product stock
       await prisma.product.update({
         where: { id: productId },
         data: { stock: { decrement: quantity } }
@@ -256,7 +234,6 @@ const createDirectOrder = async (req, res) => {
       return order;
     });
 
-    // Format response
     const formattedOrder = {
       id: `VYR-${result.createdAt.getFullYear()}-${String(result.id).padStart(6, '0')}`,
       date: result.createdAt.toLocaleDateString('en-US', {

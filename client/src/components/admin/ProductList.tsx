@@ -1,4 +1,3 @@
-// Component to display and manage list of products
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -21,7 +20,6 @@ interface ProductListProps {
 }
 
 export default function ProductList({ products, onProductDeleted, onProductEdit }: ProductListProps) {
-  // Handle delete product
   const handleDelete = async (productId: number) => {
     if (!confirm('Are you sure you want to delete this product?')) {
       return;
@@ -67,7 +65,6 @@ export default function ProductList({ products, onProductDeleted, onProductEdit 
               alt={product.name}
               className="w-24 h-24 object-cover rounded"
               onError={(e) => {
-                // Fallback if image fails to load
                 e.currentTarget.src = 'https://via.placeholder.com/150?text=No+Image';
               }}
             />

@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Image } from "@unpic/react";
 import { ChevronRight, Trash2, Loader2, ShoppingCart } from "lucide-react";
 
 interface WishlistItem {
@@ -24,7 +25,6 @@ export default function Wishlist() {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Check authentication
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (!token) {
@@ -35,7 +35,6 @@ export default function Wishlist() {
     fetchWishlistItems();
   }, [setLocation]);
 
-  // Fetch wishlist items
   const fetchWishlistItems = async () => {
     try {
       const token = localStorage.getItem('userToken');
@@ -64,7 +63,6 @@ export default function Wishlist() {
     }
   };
 
-  // Remove item from wishlist
   const removeFromWishlist = async (productId: number) => {
     try {
       const token = localStorage.getItem('userToken');
@@ -76,7 +74,7 @@ export default function Wishlist() {
       });
 
       if (response.ok) {
-        await fetchWishlistItems(); // Refresh wishlist
+        await fetchWishlistItems();
         toast({
           title: 'Item removed',
           description: 'Item has been removed from your wishlist',
@@ -92,7 +90,6 @@ export default function Wishlist() {
     }
   };
 
-  // Add to cart
   const addToCart = async (product: WishlistItem['product']) => {
     try {
       const token = localStorage.getItem('userToken');
@@ -163,10 +160,12 @@ export default function Wishlist() {
               <div key={item.id} className="group relative border rounded-xl overflow-hidden">
                 <Link href={`/product/${item.product.id}`}>
                   <div className="aspect-[3/4] bg-gray-100">
-                    <img
+                    <Image
                       src={item.product.images && item.product.images.length > 0 ? item.product.images[0] : '/placeholder.png'}
                       alt={item.product.name}
+                      layout="fullWidth"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      background="auto"
                     />
                   </div>
                 </Link>

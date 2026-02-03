@@ -1,11 +1,7 @@
-// User authentication and management controller
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const prisma = new PrismaClient();
-
-// User Registration
 const register = async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -14,7 +10,6 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
@@ -23,10 +18,8 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
     const user = await prisma.user.create({
       data: {
         email,
@@ -35,7 +28,6 @@ const register = async (req, res) => {
       }
     });
 
-    // Create JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -54,7 +46,6 @@ const register = async (req, res) => {
   }
 };
 
-// User Login
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -63,7 +54,6 @@ const login = async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Find user by email
     const user = await prisma.user.findUnique({
       where: { email }
     });
@@ -72,14 +62,12 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Create JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -98,7 +86,6 @@ const login = async (req, res) => {
   }
 };
 
-// Get user profile
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -125,7 +112,6 @@ const getProfile = async (req, res) => {
   }
 };
 
-// Update user profile
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;

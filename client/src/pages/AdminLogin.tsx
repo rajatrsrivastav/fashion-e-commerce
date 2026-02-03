@@ -1,4 +1,3 @@
-// Admin Login Page
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,13 +13,11 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Handle login form submission
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Make API call to backend
       const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/login`, {
         method: 'POST',
         headers: {
@@ -32,7 +29,6 @@ export default function AdminLogin() {
       const data = await response.json();
 
       if (response.ok) {
-        // Save token to localStorage for future requests
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('adminEmail', data.admin.email);
 
@@ -41,7 +37,6 @@ export default function AdminLogin() {
           description: 'Logged in successfully',
         });
 
-        // Redirect to admin dashboard
         setLocation('/admin/dashboard');
       } else {
         toast({

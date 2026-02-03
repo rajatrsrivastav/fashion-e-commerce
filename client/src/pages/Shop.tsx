@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useProducts } from "@/hooks/useApi";
 
-// Define TypeScript interfaces for our data
 interface Category {
   id: number;
   name: string;
@@ -31,46 +31,15 @@ interface Product {
 }
 
 export default function Shop() {
-  // State for products from backend
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [gridCols, setGridCols] = useState(3);
 
-  // Get category from URL search params
   const { search } = window.location;
   const params = new URLSearchParams(search);
   const categoryParam = params.get('category');
 
-  // Fetch products from backend when component mounts or filters change
-  useEffect(() => {
-    fetchProducts();
-  }, [categoryParam]);
+  const { data: products, isLoading } = useProducts(categoryParam || undefined);
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      // Make API call to backend
-      const url = categoryParam 
-        ? `${import.meta.env.VITE_API_URL}/products?category=${encodeURIComponent(categoryParam)}`
-        : `${import.meta.env.VITE_API_URL}/products`;
-        
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Handle both arrow object and array responses
-        const productsArray = Array.isArray(data) ? data : data.products || [];
-        setAllProducts(productsArray);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Show loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading products...</p>
@@ -129,7 +98,7 @@ export default function Shop() {
                 </SheetContent>
               </Sheet>
 
-              <p className="text-sm text-gray-500 hidden lg:block">{allProducts.length} products</p>
+              <p className="text-sm text-gray-500 hidden lg:block">{products?.length || 0} products</p>
 
               <div className="flex items-center gap-4">
                 {/* Grid Toggle */}
@@ -166,7 +135,7 @@ export default function Shop() {
 
             {/* Product Grid */}
             <div className={`grid grid-cols-1 sm:grid-cols-2 ${gridCols === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-x-6 gap-y-10`}>
-              {allProducts.map((product) => (
+              {products?.map((product) => (
                 <ProductCard key={product.id} {...product} />
               ))}
             </div>

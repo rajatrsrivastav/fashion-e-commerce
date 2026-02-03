@@ -28,7 +28,6 @@ import {
   Loader2
 } from "lucide-react";
 
-// Product images
 const img1 = "/oversized_sage_green_tee-MEXFQ9d8.png";
 const img2 = "/oversized_black_graphic_tee-CoBCJBRr.png";
 const img3 = "/oversized_maroon_tee-298jHmWi.png";
@@ -44,7 +43,6 @@ export default function Profile() {
     phone: ''
   });
 
-  // Fetch user profile
   const { data: userData, isLoading, error, refetch } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
@@ -63,7 +61,6 @@ export default function Profile() {
     enabled: isAuthenticated && !!token,
   });
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({
@@ -75,7 +72,6 @@ export default function Profile() {
     }
   }, [isAuthenticated, authLoading, setLocation, toast]);
 
-  // Update edit form when user data loads
   useEffect(() => {
     if (userData) {
       setEditForm({
@@ -117,7 +113,7 @@ export default function Profile() {
         description: "Your profile has been updated successfully.",
       });
       setIsEditing(false);
-      refetch(); // Refresh the profile data
+      refetch();
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
@@ -361,7 +357,6 @@ export default function Profile() {
   );
 }
 
-// NavItem component
 function NavItem({ icon: Icon, label, active, href }: { 
   icon: any; 
   label: string; 

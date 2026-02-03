@@ -7,26 +7,12 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Image } from "@unpic/react";
+import { useCategories } from "@/hooks/useApi";
 
 export default function Collections() {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: categories, isLoading } = useCategories();
   const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/categories`)
-      .then(res => res.json())
-      .then(data => {
-        // Handle both simple array or object with categories property
-        const cats = Array.isArray(data) ? data : (data.categories || []);
-        setCategories(cats);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching categories:', err);
-        setLoading(false);
-      });
-  }, []);
 
   const handleCategoryClick = (categoryName: string) => {
     setLocation(`/shop?category=${encodeURIComponent(categoryName)}`);
@@ -53,8 +39,7 @@ export default function Collections() {
             className="w-full"
           >
             <CarouselContent className="-ml-4">
-              {loading ? (
-                // Skeleton loader while fetching
+              {isLoading ? (
                 Array.from({ length: 6 }).map((_, idx) => (
                   <CarouselItem key={idx} className="pl-4 basis-1/2 md:basis-1/4 lg:basis-1/6">
                     <div className="flex flex-col items-center gap-4 p-2">
@@ -75,10 +60,12 @@ export default function Collections() {
                         whileHover={{ scale: 1.05 }}
                       >
                         <div className="w-full h-full rounded-full overflow-hidden bg-gray-100">
-                          <img 
-                            src={item.imageUrl || "/placeholder-category.png"} 
-                            alt={item.name} 
-                            className="w-full h-full object-cover" 
+                          <Image
+                            src={item.imageUrl || "/placeholder-category.png"}
+                            alt={item.name}
+                            layout="fullWidth"
+                            className="w-full h-full object-cover"
+                            background="auto"
                           />
                         </div>
                       </motion.div>

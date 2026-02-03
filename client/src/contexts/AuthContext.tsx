@@ -37,7 +37,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing token and user data on app start
     const storedToken = localStorage.getItem('userToken');
     const storedUser = localStorage.getItem('userData');
 
@@ -47,7 +46,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(storedToken);
         setUser(parsedUser);
       } catch (error) {
-        // Invalid stored data, clear it
         localStorage.removeItem('userToken');
         localStorage.removeItem('userData');
       }

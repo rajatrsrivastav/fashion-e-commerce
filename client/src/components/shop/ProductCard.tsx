@@ -1,10 +1,9 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Eye, ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
 import { Image } from "@unpic/react";
 import {
   Tooltip,
@@ -12,6 +11,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useWishlistStatus, useToggleWishlist, useAddToCart } from "@/hooks/useApi";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
   id: number;
@@ -29,39 +30,24 @@ interface ProductCardProps {
 export default function ProductCard({ id, name, price, imageUrl, images, category, stock }: ProductCardProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
-  const [isInWishlist, setIsInWishlist] = useState(false);
 
   const displayImage = images && images.length > 0 ? images[0] : imageUrl;
 
-  // Check if product is in wishlist on mount
+  const { data: wishlistStatus } = useWishlistStatus(id);
+  const toggleWishlistMutation = useToggleWishlist();
+  const addToCartMutation = useAddToCart();
+
+  // Local state for immediate UI update
+  const [isInWishlist, setIsInWishlist] = useState(false);
+
+  // Sync with server data
   useEffect(() => {
-    const checkWishlistStatus = async () => {
-      const token = localStorage.getItem('userToken');
-      if (!token) return;
+    if (wishlistStatus) {
+      setIsInWishlist(wishlistStatus.isInWishlist);
+    }
+  }, [wishlistStatus]);
 
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/${id}/check`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setIsInWishlist(data.isInWishlist);
-        }
-      } catch (error) {
-        console.error('Error checking wishlist status:', error);
-      }
-    };
-
-    checkWishlistStatus();
-  }, [id]);
-
-  // Add to cart
-  const addToCart = async (e: React.MouseEvent) => {
+  const addToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation();
 
@@ -81,44 +67,11 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
       return;
     }
 
-    setIsAddingToCart(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId: id }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: 'Added to cart',
-          description: `${name} has been added to your cart`,
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to add item to cart',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add item to cart',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsAddingToCart(false);
-    }
+    addToCartMutation.mutate({ productId: id, quantity: 1 });
   };
 
-  // Toggle wishlist
-  const toggleWishlist = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation
+  const toggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
 
     const token = localStorage.getItem('userToken');
@@ -128,18 +81,14 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
       return;
     }
 
-    setIsTogglingWishlist(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+    // Immediately update UI
+    const newStatus = !isInWishlist;
+    setIsInWishlist(newStatus);
 
-      const data = await response.json();
-
-      if (response.ok) {
+    // Call API
+    toggleWishlistMutation.mutate(id, {
+      onSuccess: (data) => {
+        // Update with server response
         setIsInWishlist(data.isInWishlist);
         toast({
           title: data.isInWishlist ? 'Added to wishlist' : 'Removed from wishlist',
@@ -147,23 +96,17 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
             ? `${name} has been added to your wishlist`
             : `${name} has been removed from your wishlist`,
         });
-      } else {
+      },
+      onError: () => {
+        // Revert on error
+        setIsInWishlist(!newStatus);
         toast({
           title: 'Error',
           description: 'Failed to update wishlist',
           variant: 'destructive',
         });
       }
-    } catch (error) {
-      console.error('Error toggling wishlist:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update wishlist',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsTogglingWishlist(false);
-    }
+    });
   };
   
   return (
@@ -193,19 +136,19 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
       <div className="absolute bottom-[120px] left-0 right-0 px-4 flex gap-2 translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10">
         <Button
           onClick={addToCart}
-          disabled={isAddingToCart || stock === 0}
+          disabled={addToCartMutation.isPending || stock === 0}
           className="flex-1 bg-white text-black hover:bg-black hover:text-white transition-colors shadow-lg"
           size="sm"
         >
           <ShoppingCart className="w-4 h-4 mr-2" />
-          {isAddingToCart ? 'Adding...' : stock === 0 ? 'Out of Stock' : 'Add'}
+          {addToCartMutation.isPending ? 'Adding...' : stock === 0 ? 'Out of Stock' : 'Add'}
         </Button>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 onClick={toggleWishlist}
-                disabled={isTogglingWishlist}
+                disabled={toggleWishlistMutation.isPending}
                 variant="secondary"
                 size="sm"
                 className={`bg-white/90 hover:bg-white shadow-lg transition-all duration-300 ${
@@ -214,7 +157,7 @@ export default function ProductCard({ id, name, price, imageUrl, images, categor
               >
                 <motion.div
                   animate={{ 
-                    scale: isTogglingWishlist ? [1, 1.2, 1] : 1,
+                    scale: toggleWishlistMutation.isPending ? [1, 1.2, 1] : 1,
                   }}
                   transition={{ duration: 0.3 }}
                 >

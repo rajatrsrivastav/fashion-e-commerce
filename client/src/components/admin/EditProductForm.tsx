@@ -1,4 +1,3 @@
-// Component to edit an existing product
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +45,6 @@ export default function EditProductForm({ product, categories, onProductUpdated,
   const [images, setImages] = useState<string[]>(product.images || []);
   const [newImages, setNewImages] = useState<File[]>([]);
 
-  // Handle input changes
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -54,7 +52,6 @@ export default function EditProductForm({ product, categories, onProductUpdated,
     }));
   };
 
-  // Handle image upload to Cloudinary
   const handleImageUpload = async (files: FileList) => {
     const uploadedUrls: string[] = [];
 
@@ -94,13 +91,11 @@ export default function EditProductForm({ product, categories, onProductUpdated,
     }
   };
 
-  // Remove image
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
     setNewImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -162,7 +157,6 @@ export default function EditProductForm({ product, categories, onProductUpdated,
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Name */}
         <div>
           <Label htmlFor="edit-name">Name *</Label>
           <Input
@@ -173,7 +167,6 @@ export default function EditProductForm({ product, categories, onProductUpdated,
           />
         </div>
 
-        {/* Description */}
         <div>
           <Label htmlFor="edit-description">Description *</Label>
           <Textarea
@@ -185,7 +178,6 @@ export default function EditProductForm({ product, categories, onProductUpdated,
           />
         </div>
 
-        {/* Price and Stock */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="edit-price">Price (₹) *</Label>
@@ -210,7 +202,6 @@ export default function EditProductForm({ product, categories, onProductUpdated,
           </div>
         </div>
 
-        {/* Category */}
         <div>
           <Label htmlFor="edit-category">Category *</Label>
           <Select value={formData.categoryId} onValueChange={(value) => handleInputChange('categoryId', value)}>
@@ -227,7 +218,6 @@ export default function EditProductForm({ product, categories, onProductUpdated,
           </Select>
         </div>
 
-        {/* Images */}
         <div>
           <Label>Images (at least 3 required)</Label>
           <div className="mt-2">
@@ -247,7 +237,6 @@ export default function EditProductForm({ product, categories, onProductUpdated,
             </Label>
           </div>
 
-          {/* Display current images */}
           {images.length > 0 && (
             <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
               {images.map((url, index) => (
@@ -278,7 +267,6 @@ export default function EditProductForm({ product, categories, onProductUpdated,
           )}
         </div>
 
-        {/* Submit Button */}
         <div className="flex gap-3 pt-4">
           <Button type="submit" disabled={loading || images.length < 3} className="flex-1">
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

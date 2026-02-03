@@ -1,4 +1,3 @@
-// User Registration Page
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -23,13 +22,13 @@ export default function Register() {
     password: '',
     confirmPassword: '',
   });
-  // Redirect if already logged in
+
   useEffect(() => {
     if (isAuthenticated) {
       setLocation('/');
     }
   }, [isAuthenticated, setLocation]);
-  // Handle input changes
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -37,11 +36,9 @@ export default function Register() {
     }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: 'Password Mismatch',
@@ -51,7 +48,6 @@ export default function Register() {
       return;
     }
 
-    // Validate password length
     if (formData.password.length < 6) {
       toast({
         title: 'Password Too Short',
@@ -79,7 +75,6 @@ export default function Register() {
       const data = await response.json();
 
       if (response.ok) {
-        // Use auth context to login
         login(data.token, data.user);
 
         toast({
@@ -87,7 +82,6 @@ export default function Register() {
           description: 'Your account has been created successfully',
         });
 
-        // Redirect to home
         setLocation('/');
       } else {
         toast({

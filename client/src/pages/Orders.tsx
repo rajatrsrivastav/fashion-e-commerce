@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Image } from "@unpic/react";
+import api from "@/lib/api";
 import {
   ChevronRight,
   Package,
@@ -69,30 +70,20 @@ export default function Orders() {
   const { toast } = useToast();
   const { isAuthenticated, token, isLoading: authLoading } = useAuth();
 
-  // Fetch orders
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/orders`, {
+      const response = await api.get('/orders', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
-      if (response.status === 401) {
-        throw new Error('Authentication required');
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch orders');
-      }
-
-      return response.json();
+      return response.data;
     },
     enabled: isAuthenticated && !!token,
   });
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({
@@ -276,10 +267,12 @@ function OrderCard({ order, isExpanded, onToggle }: OrderCardProps) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-              <img 
-                src={order.items[0].image} 
-                alt="" 
+              <Image
+                src={order.items[0].image}
+                alt=""
+                layout="fullWidth"
                 className="w-full h-full object-cover"
+                background="auto"
               />
             </div>
             <div>

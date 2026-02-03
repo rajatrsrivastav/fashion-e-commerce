@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Image } from "@unpic/react";
 
 const logo = "/favicon.png";
 
@@ -18,7 +19,6 @@ export default function Navbar() {
   const [wishlistCount, setWishlistCount] = useState(0);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // Check authentication status and fetch counts
   useEffect(() => {
     if (isAuthenticated) {
       fetchCartCount();
@@ -26,7 +26,6 @@ export default function Navbar() {
     }
   }, [isAuthenticated]);
 
-  // Fetch cart count
   const fetchCartCount = async () => {
     try {
       const token = localStorage.getItem('userToken');
@@ -46,7 +45,6 @@ export default function Navbar() {
     }
   };
 
-  // Fetch wishlist count
   const fetchWishlistCount = async () => {
     try {
       const token = localStorage.getItem('userToken');
@@ -65,7 +63,6 @@ export default function Navbar() {
     }
   };
 
-  // Handle logout
   const handleLogout = () => {
     logout();
     setCartCount(0);
@@ -94,7 +91,7 @@ export default function Navbar() {
         <div className="flex items-center gap-6">
           <Link href="/">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-black flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-300">
-              <img src={logo} alt="VYRAL" className="w-full h-full object-cover" />
+              <Image src={logo} alt="VYRAL" layout="fullWidth" className="w-full h-full object-cover" background="auto" />
             </div>
           </Link>
 
@@ -140,7 +137,6 @@ export default function Navbar() {
             {openUserMenu && (
               <div className="absolute right-0 top-full mt-2 w-56 bg-white border rounded-lg shadow-lg z-50 py-3">
                 {isAuthenticated ? (
-                  // Logged in user menu
                   <>
                     <div className="px-4 pb-2">
                       <p className="font-semibold text-lg">Hi, {user?.name || 'User'}</p>
@@ -163,7 +159,6 @@ export default function Navbar() {
                     </div>
                   </>
                 ) : (
-                  // Not logged in menu
                   <>
                     <div className="px-4 pb-2">
                       <p className="font-semibold text-lg">Welcome</p>

@@ -1,4 +1,3 @@
-// Admin Dashboard - Main page for managing products
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import AddProductForm from '@/components/admin/AddProductForm';
 import EditProductForm from '@/components/admin/EditProductForm';
 import ProductList from '@/components/admin/ProductList';
+import api from '@/lib/api';
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -17,7 +17,6 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Check if admin is logged in
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
@@ -30,33 +29,27 @@ export default function AdminDashboard() {
     }
   }, [setLocation, toast]);
 
-  // Fetch products from backend
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/products`, {
+      const response = await api.get('/admin/products', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        setProducts(data.products);
-      }
+      const data = response.data;
+      setProducts(data.products);
     } catch (error) {
       console.error('Error fetching products:', error);
     }
   };
 
-  // Fetch categories from backend
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`);
-      const data = await response.json();
-      if (response.ok) {
-        setCategories(data.categories);
-      }
+      const response = await api.get('/categories');
+      const data = response.data;
+      setCategories(data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
     } finally {
@@ -64,13 +57,11 @@ export default function AdminDashboard() {
     }
   };
 
-  // Load data when component mounts
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, []);
 
-  // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminEmail');
@@ -81,34 +72,30 @@ export default function AdminDashboard() {
     setLocation('/admin/login');
   };
 
-  // Callback when product is added successfully
   const handleProductAdded = () => {
     setShowAddForm(false);
-    fetchProducts(); // Refresh product list
+    fetchProducts();
     toast({
       title: 'Success',
       description: 'Product added successfully',
     });
   };
 
-  // Callback when product is deleted
   const handleProductDeleted = () => {
-    fetchProducts(); // Refresh product list
+    fetchProducts();
     toast({
       title: 'Success',
       description: 'Product deleted successfully',
     });
   };
 
-  // Handle editing a product
   const handleEditProduct = (product: any) => {
     setEditingProduct(product);
   };
 
-  // Callback when product is updated
   const handleProductUpdated = () => {
     setEditingProduct(null);
-    fetchProducts(); // Refresh product list
+    fetchProducts();
     toast({
       title: 'Success',
       description: 'Product updated successfully',

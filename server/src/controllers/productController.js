@@ -1,38 +1,27 @@
-// Import Prisma client to interact with database
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 
-// Create a new Prisma client instance
-const prisma = new PrismaClient();
-
-// Get all products (Public - no auth required)
-// This is what users see on the shop page
 const getAllProducts = async (req, res) => {
   try {
-    // Check if filtering by category
     const { category } = req.query;
 
-    // Build query conditions
     const where = {};
     if (category) {
-      // If it's a number, filter by categoryId
       if (!isNaN(category)) {
         where.categoryId = parseInt(category);
       } else {
-        // If it's a string, filter by category name
         where.category = {
           name: category
         };
       }
     }
 
-    // Fetch products from database
     const products = await prisma.product.findMany({
       where,
       include: {
-        category: true // Include category name with each product
+        category: true
       },
       orderBy: {
-        createdAt: 'desc' // Show newest products first
+        createdAt: 'desc'
       }
     });
 
@@ -44,21 +33,17 @@ const getAllProducts = async (req, res) => {
   }
 };
 
-// Get single product by ID (Public)
-// This is for the product detail page
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find product by ID in database
     const product = await prisma.product.findUnique({
       where: { id: parseInt(id) },
       include: {
-        category: true // Include category details
+        category: true
       }
     });
 
-    // If product doesn't exist
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -71,15 +56,12 @@ const getProductById = async (req, res) => {
   }
 };
 
-// Get all categories (Public)
-// Used for showing category filters
 const getAllCategories = async (req, res) => {
   try {
-    // Fetch all categories from database
     const categories = await prisma.category.findMany({
       include: {
         _count: {
-          select: { products: true } // Count products in each category
+          select: { products: true }
         }
       }
     });
@@ -92,7 +74,6 @@ const getAllCategories = async (req, res) => {
   }
 };
 
-// Export all functions so they can be used in routes
 module.exports = {
   getAllProducts,
   getProductById,

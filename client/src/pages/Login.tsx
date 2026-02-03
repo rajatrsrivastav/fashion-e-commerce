@@ -1,4 +1,3 @@
-// User Login Page
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -20,13 +19,13 @@ export default function Login() {
     email: '',
     password: '',
   });
-  // Redirect if already logged in
+
   useEffect(() => {
     if (isAuthenticated) {
       setLocation('/');
     }
   }, [isAuthenticated, setLocation]);
-  // Handle input changes
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -34,7 +33,6 @@ export default function Login() {
     }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -51,7 +49,6 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Use auth context to login
         login(data.token, data.user);
 
         toast({
@@ -59,7 +56,6 @@ export default function Login() {
           description: 'You have been logged in successfully',
         });
 
-        // Redirect to home or intended page
         const redirectTo = localStorage.getItem('redirectAfterLogin') || '/';
         localStorage.removeItem('redirectAfterLogin');
         setLocation(redirectTo);

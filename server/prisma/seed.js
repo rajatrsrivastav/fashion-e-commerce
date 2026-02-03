@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Seed admin user
   const hashedPassword = await bcrypt.hash('admin123', 10);
 
   const admin = await prisma.admin.upsert({
@@ -18,7 +17,6 @@ async function main() {
 
   console.log('Admin user created:', admin.email);
 
-  // Seed categories
   const categories = [
     { name: 'Sleeveless', imageUrl: '/SLEVELESS.png' },
     { name: 'ANIME', imageUrl: '/ANIME.png' },
@@ -39,7 +37,6 @@ async function main() {
     console.log('Category created:', category.name);
   }
 
-  // Seed products
   const products = [
     {
       name: 'Oversized Black Graphic Tee',

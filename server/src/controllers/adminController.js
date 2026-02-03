@@ -1,47 +1,35 @@
-// Import Prisma client to interact with database
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Create a new Prisma client instance
-const prisma = new PrismaClient();
-
-// Admin Login
-// This function checks if admin exists and password is correct
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if email and password are provided
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Find admin by email in database
     const admin = await prisma.admin.findUnique({
       where: { email }
     });
 
-    // If admin doesn't exist, return error
     if (!admin) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Compare provided password with hashed password in database
     const isPasswordValid = await bcrypt.compare(password, admin.password);
 
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Create a JWT token for authentication
     const token = jwt.sign(
       { adminId: admin.id, email: admin.email },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    // Send success response with token
     res.json({
       message: 'Login successful',
       token,
@@ -54,18 +42,14 @@ const login = async (req, res) => {
   }
 };
 
-// Register Admin (Optional - for creating first admin)
-// In production, you might want to remove this or add more security
 const register = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if email and password are provided
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Check if admin already exists
     const existingAdmin = await prisma.admin.findUnique({
       where: { email }
     });
@@ -74,10 +58,8 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'Admin already exists' });
     }
 
-    // Hash the password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new admin in database
     const admin = await prisma.admin.create({
       data: {
         email,
@@ -85,7 +67,6 @@ const register = async (req, res) => {
       }
     });
 
-    // Send success response (without password)
     res.status(201).json({
       message: 'Admin registered successfully',
       admin: { id: admin.id, email: admin.email }
@@ -97,22 +78,18 @@ const register = async (req, res) => {
   }
 };
 
-// Add a new product (Admin only)
 const addProduct = async (req, res) => {
   try {
     const { name, description, price, images, stock, categoryId } = req.body;
 
-    // Validate required fields
     if (!name || !description || !price || !images || !stock || !categoryId) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Validate images array
     if (!Array.isArray(images) || images.length < 3) {
       return res.status(400).json({ error: 'At least 3 images are required' });
     }
 
-    // Create product in database
     const product = await prisma.product.create({
       data: {
         name,
@@ -123,7 +100,7 @@ const addProduct = async (req, res) => {
         categoryId: parseInt(categoryId)
       },
       include: {
-        category: true // Include category details in response
+        category: true
       }
     });
 
@@ -138,13 +115,11 @@ const addProduct = async (req, res) => {
   }
 };
 
-// Update an existing product (Admin only)
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, price, images, stock, categoryId } = req.body;
 
-    // Update product in database
     const product = await prisma.product.update({
       where: { id: parseInt(id) },
       data: {
@@ -171,12 +146,10 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// Delete a product (Admin only)
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Delete product from database
     await prisma.product.delete({
       where: { id: parseInt(id) }
     });
@@ -189,16 +162,14 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-// Get all products (Admin view)
 const getAllProducts = async (req, res) => {
   try {
-    // Fetch all products from database
     const products = await prisma.product.findMany({
       include: {
-        category: true // Include category details
+        category: true
       },
       orderBy: {
-        createdAt: 'desc' // Newest first
+        createdAt: 'desc'
       }
     });
 
@@ -210,7 +181,6 @@ const getAllProducts = async (req, res) => {
   }
 };
 
-// Add a new category (Admin only)
 const addCategory = async (req, res) => {
   try {
     const { name } = req.body;
@@ -219,7 +189,6 @@ const addCategory = async (req, res) => {
       return res.status(400).json({ error: 'Category name is required' });
     }
 
-    // Create category in database
     const category = await prisma.category.create({
       data: { name }
     });
@@ -235,10 +204,8 @@ const addCategory = async (req, res) => {
   }
 };
 
-// Get all categories
 const getAllCategories = async (req, res) => {
   try {
-    // Fetch all categories from database
     const categories = await prisma.category.findMany();
 
     res.json({ categories });
@@ -249,7 +216,6 @@ const getAllCategories = async (req, res) => {
   }
 };
 
-// Export all functions so they can be used in routes
 module.exports = {
   login,
   register,

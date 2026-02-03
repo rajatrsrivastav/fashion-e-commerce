@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { Image } from "@unpic/react";
 import {
   Minus,
   Plus,
@@ -18,6 +19,7 @@ import {
   ChevronRight,
   Loader2
 } from "lucide-react";
+import { useCart, useUpdateCartItem, useRemoveFromCart } from "@/hooks/useApi";
 
 interface CartItem {
   id: number;
@@ -35,74 +37,19 @@ interface CartItem {
 export default function Cart() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { isAuthenticated, token } = useAuth();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [updatingItem, setUpdatingItem] = useState<number | null>(null);
+  const { isAuthenticated } = useAuth();
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
-  // Check authentication
-  useEffect(() => {
-    if (!isAuthenticated) {
-      localStorage.setItem('redirectAfterLogin', '/cart');
-      setLocation('/login');
-      return;
-    }
-    fetchCartItems();
-  }, [isAuthenticated, setLocation]);
+  const { data: cartItems = [], isLoading } = useCart();
+  const updateCartMutation = useUpdateCartItem();
+  const removeCartMutation = useRemoveFromCart();
 
-  // Fetch cart items
-  const fetchCartItems = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCartItems(data.cartItems);
-      } else if (response.status === 401) {
-        setLocation('/login');
-      }
-    } catch (error) {
-      console.error('Error fetching cart:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load cart items',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update item quantity
   const updateQuantity = async (productId: number, newQuantity: number) => {
     if (newQuantity < 1) return;
 
-    setUpdatingItem(productId);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart/${productId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ quantity: newQuantity }),
-      });
-
-      if (response.ok) {
-        await fetchCartItems(); // Refresh cart
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to update quantity',
-          variant: 'destructive',
-        });
-      }
+      await updateCartMutation.mutateAsync({ productId, quantity: newQuantity });
     } catch (error) {
       console.error('Error updating quantity:', error);
       toast({
@@ -110,28 +57,16 @@ export default function Cart() {
         description: 'Failed to update quantity',
         variant: 'destructive',
       });
-    } finally {
-      setUpdatingItem(null);
     }
   };
 
-  // Remove item from cart
   const removeItem = async (productId: number) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart/${productId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+      await removeCartMutation.mutateAsync(productId);
+      toast({
+        title: 'Item removed',
+        description: 'Item has been removed from your cart',
       });
-
-      if (response.ok) {
-        await fetchCartItems(); // Refresh cart
-        toast({
-          title: 'Item removed',
-          description: 'Item has been removed from your cart',
-        });
-      }
     } catch (error) {
       console.error('Error removing item:', error);
       toast({
@@ -142,9 +77,7 @@ export default function Cart() {
     }
   };
 
-  // Apply coupon code
   const applyCoupon = () => {
-    // Simple coupon validation - you can implement more complex logic
     const validCoupons = ['SAVE10', 'WELCOME20', 'FIRST50'];
     
     if (validCoupons.includes(couponCode.toUpperCase())) {
@@ -162,7 +95,6 @@ export default function Cart() {
     }
   };
 
-  // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const discount = appliedCoupon === 'SAVE10' ? subtotal * 0.1 : 
                   appliedCoupon === 'WELCOME20' ? subtotal * 0.2 : 
@@ -170,7 +102,7 @@ export default function Cart() {
   const shipping = cartItems.length === 0 ? 0 : (subtotal >= 999 ? 0 : 49);
   const total = subtotal - discount + shipping;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -226,10 +158,12 @@ export default function Cart() {
                     {/* Image */}
                     <Link href={`/product/${item.product.id}`}>
                       <div className="w-24 h-32 md:w-32 md:h-40 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                        <img
-                          src={item.product.images && item.product.images.length > 0 ? item.product.images[0] : '/placeholder.png'}
+                        <Image
+                          src={item.product.images && item.product.images.length > 0 ? item.product.images[0] : 'https://via.placeholder.com/300x400?text=No+Image'}
                           alt={item.product.name}
+                          layout="fullWidth"
                           className="w-full h-full object-cover hover:scale-105 transition-transform"
+                          background="auto"
                         />
                       </div>
                     </Link>
@@ -255,7 +189,7 @@ export default function Cart() {
                         <div className="flex items-center border rounded-lg">
                           <button
                             onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                            disabled={updatingItem === item.product.id}
+                            disabled={updateCartMutation.isPending}
                             className="p-2 hover:bg-gray-100 transition-colors disabled:opacity-50"
                           >
                             <Minus className="w-4 h-4" />
@@ -263,7 +197,7 @@ export default function Cart() {
                           <span className="w-10 text-center text-sm font-medium">{item.quantity}</span>
                           <button 
                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                            disabled={updatingItem === item.product.id}
+                            disabled={updateCartMutation.isPending}
                             className="p-2 hover:bg-gray-100 transition-colors disabled:opacity-50"
                           >
                             <Plus className="w-4 h-4" />

@@ -1,9 +1,5 @@
-// Cart management controller
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 
-const prisma = new PrismaClient();
-
-// Add item to cart
 const addToCart = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -13,7 +9,6 @@ const addToCart = async (req, res) => {
       return res.status(400).json({ error: 'Product ID is required' });
     }
 
-    // Check if product exists and has stock
     const product = await prisma.product.findUnique({
       where: { id: parseInt(productId) }
     });
@@ -26,7 +21,6 @@ const addToCart = async (req, res) => {
       return res.status(400).json({ error: 'Insufficient stock' });
     }
 
-    // Check if item already in cart
     const existingCartItem = await prisma.cart.findUnique({
       where: {
         userId_productId: {
@@ -37,7 +31,6 @@ const addToCart = async (req, res) => {
     });
 
     if (existingCartItem) {
-      // Update quantity
       const newQuantity = existingCartItem.quantity + parseInt(quantity);
       if (newQuantity > product.stock) {
         return res.status(400).json({ error: 'Insufficient stock' });
@@ -54,7 +47,6 @@ const addToCart = async (req, res) => {
         cartItem
       });
     } else {
-      // Add new item to cart
       const cartItem = await prisma.cart.create({
         data: {
           userId: userId,
@@ -76,7 +68,6 @@ const addToCart = async (req, res) => {
   }
 };
 
-// Get user's cart
 const getCart = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -101,7 +92,6 @@ const getCart = async (req, res) => {
   }
 };
 
-// Update cart item quantity
 const updateCartItem = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -112,7 +102,6 @@ const updateCartItem = async (req, res) => {
       return res.status(400).json({ error: 'Valid quantity is required' });
     }
 
-    // Check product stock
     const product = await prisma.product.findUnique({
       where: { id: parseInt(productId) }
     });
@@ -145,7 +134,6 @@ const updateCartItem = async (req, res) => {
   }
 };
 
-// Remove item from cart
 const removeFromCart = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -170,7 +158,6 @@ const removeFromCart = async (req, res) => {
   }
 };
 
-// Clear entire cart
 const clearCart = async (req, res) => {
   try {
     const userId = req.user.userId;

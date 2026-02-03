@@ -30,65 +30,32 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Image } from "@unpic/react";
+import { useProduct, useWishlistStatus, useToggleWishlist, useAddToCart } from "@/hooks/useApi";
 
 export default function ProductDetails() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState("M");
   const [selectedColor, setSelectedColor] = useState("Standard");
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
+
+  const { data: product, isLoading } = useProduct(id!);
+  const { data: wishlistStatus } = useWishlistStatus(parseInt(id!));
+  const toggleWishlistMutation = useToggleWishlist();
+  const addToCartMutation = useAddToCart();
+
+  // Local state for immediate UI update
   const [isInWishlist, setIsInWishlist] = useState(false);
 
+  // Sync with server data
   useEffect(() => {
-    if (id) {
-      window.scrollTo(0, 0);
-      fetch(`${import.meta.env.VITE_API_URL}/products/${id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.product) {
-            setProduct(data.product);
-          }
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error('Error fetching product:', err);
-          setLoading(false);
-        });
+    if (wishlistStatus) {
+      setIsInWishlist(wishlistStatus.isInWishlist);
     }
-  }, [id]);
+  }, [wishlistStatus]);
 
-  // Check wishlist status
-  useEffect(() => {
-    const checkWishlistStatus = async () => {
-      const token = localStorage.getItem('userToken');
-      if (!token || !id) return;
-
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/${id}/check`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setIsInWishlist(data.isInWishlist);
-        }
-      } catch (error) {
-        console.error('Error checking wishlist status:', error);
-      }
-    };
-
-    checkWishlistStatus();
-  }, [id]);
-
-  // Add to cart
   const addToCart = async () => {
     const token = localStorage.getItem('userToken');
     if (!token) {
@@ -106,46 +73,13 @@ export default function ProductDetails() {
       return;
     }
 
-    setIsAddingToCart(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          productId: parseInt(id!),
-          quantity: quantity
-        }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: 'Added to cart',
-          description: `${product.name} has been added to your cart`,
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to add item to cart',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add item to cart',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsAddingToCart(false);
-    }
+    addToCartMutation.mutate({
+      productId: parseInt(id!),
+      quantity: quantity
+    });
   };
 
-  // Toggle wishlist
-  const toggleWishlist = async () => {
+  const toggleWishlist = () => {
     const token = localStorage.getItem('userToken');
     if (!token) {
       localStorage.setItem('redirectAfterLogin', `/product/${id}`);
@@ -153,45 +87,34 @@ export default function ProductDetails() {
       return;
     }
 
-    setIsTogglingWishlist(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+    // Immediately update UI
+    const newStatus = !isInWishlist;
+    setIsInWishlist(newStatus);
 
-      const data = await response.json();
-
-      if (response.ok) {
+    // Call API
+    toggleWishlistMutation.mutate(parseInt(id!), {
+      onSuccess: (data) => {
+        // Update with server response
         setIsInWishlist(data.isInWishlist);
         toast({
           title: data.isInWishlist ? 'Added to wishlist' : 'Removed from wishlist',
-          description: data.isInWishlist 
-            ? `${product.name} has been added to your wishlist`
-            : `${product.name} has been removed from your wishlist`,
+          description: data.isInWishlist
+            ? `${product?.name} has been added to your wishlist`
+            : `${product?.name} has been removed from your wishlist`,
         });
-      } else {
+      },
+      onError: () => {
+        // Revert on error
+        setIsInWishlist(!newStatus);
         toast({
           title: 'Error',
           description: 'Failed to update wishlist',
           variant: 'destructive',
         });
       }
-    } catch (error) {
-      console.error('Error toggling wishlist:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update wishlist',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsTogglingWishlist(false);
-    }
+    });
   };
 
-  // Buy Now - Redirect to checkout with this product
   const buyNow = () => {
     const token = localStorage.getItem('userToken');
     if (!token) {
@@ -209,7 +132,6 @@ export default function ProductDetails() {
       return;
     }
 
-    // Store buy now item in session storage
     const buyNowItem = {
       productId: parseInt(id!),
       quantity: quantity,
@@ -224,7 +146,7 @@ export default function ProductDetails() {
     setLocation('/checkout?buyNow=true');
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
@@ -383,7 +305,7 @@ export default function ProductDetails() {
                       <TooltipTrigger asChild>
                         <Button
                           onClick={toggleWishlist}
-                          disabled={isTogglingWishlist}
+                          disabled={toggleWishlistMutation.isPending}
                           variant="outline"
                           size="icon"
                           className={`h-12 w-12 rounded-xl border-2 transition-all duration-300 ${
@@ -392,12 +314,12 @@ export default function ProductDetails() {
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
-                          {isTogglingWishlist ? (
+                          {toggleWishlistMutation.isPending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
                           ) : (
                             <motion.div
                               animate={{ 
-                                scale: isTogglingWishlist ? [1, 1.2, 1] : 1,
+                                scale: toggleWishlistMutation.isPending ? [1, 1.2, 1] : 1,
                               }}
                               transition={{ duration: 0.3 }}
                             >
@@ -424,10 +346,10 @@ export default function ProductDetails() {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button
                   onClick={addToCart}
-                  disabled={isAddingToCart || !product || product.stock === 0}
+                  disabled={addToCartMutation.isPending || !product || product.stock === 0}
                   className="flex-1 h-14 text-lg font-bold bg-black text-white hover:bg-gray-800 rounded-xl shadow-xl shadow-gray-200 transition-all active:scale-95"
                 >
-                  {isAddingToCart ? (
+                  {addToCartMutation.isPending ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                       Adding...

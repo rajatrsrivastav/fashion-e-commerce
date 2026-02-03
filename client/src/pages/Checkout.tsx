@@ -44,11 +44,9 @@ export default function Checkout() {
   const [saveInfo, setSaveInfo] = useState(true);
   const [shippingAddress, setShippingAddress] = useState("");
   
-  // Check if this is a Buy Now checkout
   const isBuyNow = new URLSearchParams(window.location.search).get('buyNow') === 'true';
   const [buyNowItem, setBuyNowItem] = useState<CartItem | null>(null);
 
-  // Load Buy Now item from session storage
   useEffect(() => {
     if (isBuyNow) {
       const storedItem = sessionStorage.getItem('buyNowItem');
@@ -56,7 +54,7 @@ export default function Checkout() {
         try {
           const item = JSON.parse(storedItem);
           setBuyNowItem({
-            id: 0, // Temporary ID for buy now
+            id: 0,
             userId: 0,
             productId: item.productId,
             quantity: item.quantity,
@@ -69,7 +67,6 @@ export default function Checkout() {
     }
   }, [isBuyNow]);
 
-  // Fetch cart items
   const { data: cartData, isLoading: cartLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
@@ -95,10 +92,8 @@ export default function Checkout() {
 
   const cartItems = Array.isArray(cartData?.cartItems) ? cartData.cartItems : (Array.isArray(cartData) ? cartData : []);
 
-  // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async (address: string) => {
-      // If Buy Now, create direct order
       if (isBuyNow && buyNowItem) {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/orders/direct`, {
           method: 'POST',
@@ -121,7 +116,6 @@ export default function Checkout() {
         return response.json();
       }
       
-      // Otherwise, create order from cart
       const response = await fetch(`${import.meta.env.VITE_API_URL}/orders`, {
         method: 'POST',
         headers: {
@@ -139,7 +133,6 @@ export default function Checkout() {
       return response.json();
     },
     onSuccess: (order) => {
-      // Clear buy now item from session storage
       if (isBuyNow) {
         sessionStorage.removeItem('buyNowItem');
       }
@@ -159,7 +152,6 @@ export default function Checkout() {
     },
   });
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       localStorage.setItem('redirectAfterLogin', '/checkout');
@@ -167,18 +159,16 @@ export default function Checkout() {
     }
   }, [isAuthenticated, setLocation]);
 
-  // Redirect to cart if empty (unless Buy Now)
   useEffect(() => {
     if (!isBuyNow && !cartLoading && Array.isArray(cartItems) && cartItems.length === 0) {
       setLocation('/cart');
     }
   }, [cartItems, cartLoading, setLocation, isBuyNow]);
 
-  // Use Buy Now item if available, otherwise use cart items
   const displayItems = isBuyNow && buyNowItem ? [buyNowItem] : cartItems;
   
   const subtotal = Array.isArray(displayItems) ? displayItems.reduce((sum: number, item: CartItem) => sum + item.product.price * item.quantity, 0) : 0;
-  const shipping = subtotal > 1000 ? 0 : 99; // Free shipping over ₹1000
+  const shipping = subtotal > 1000 ? 0 : 99;
   const total = subtotal + shipping;
 
   const handlePlaceOrder = () => {

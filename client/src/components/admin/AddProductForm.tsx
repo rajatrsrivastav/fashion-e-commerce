@@ -1,4 +1,3 @@
-// Form component for adding new products
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +18,6 @@ interface AddProductFormProps {
 }
 
 export default function AddProductForm({ categories, onSuccess }: AddProductFormProps) {
-  // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -28,7 +26,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
   const [categoryId, setCategoryId] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Handle file upload to Cloudinary
   const uploadToCloudinary = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -53,7 +50,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
     }
   };
 
-  // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
@@ -65,12 +61,10 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
     }
   };
 
-  // Remove image
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -78,7 +72,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
     try {
       const token = localStorage.getItem('adminToken');
 
-      // Make API call to backend
       const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/products`, {
         method: 'POST',
         headers: {
@@ -96,7 +89,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
       });
 
       if (response.ok) {
-        // Reset form
         setName('');
         setDescription('');
         setPrice('');
@@ -104,7 +96,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
         setStock('');
         setCategoryId('');
 
-        // Call success callback
         onSuccess();
       } else {
         const data = await response.json();
@@ -121,7 +112,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Product Name */}
         <div className="space-y-2">
           <Label htmlFor="name">Product Name *</Label>
           <Input
@@ -133,7 +123,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
           />
         </div>
 
-        {/* Category */}
         <div className="space-y-2">
           <Label htmlFor="category">Category *</Label>
           <Select value={categoryId} onValueChange={setCategoryId} required>
@@ -150,7 +139,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
           </Select>
         </div>
 
-        {/* Price */}
         <div className="space-y-2">
           <Label htmlFor="price">Price (₹) *</Label>
           <Input
@@ -164,7 +152,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
           />
         </div>
 
-        {/* Stock */}
         <div className="space-y-2">
           <Label htmlFor="stock">Stock Quantity *</Label>
           <Input
@@ -177,7 +164,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
           />
         </div>
 
-        {/* Images */}
         <div className="space-y-2 md:col-span-2">
           <Label>Product Images * (At least 3 required)</Label>
           <Input
@@ -191,7 +177,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
             Select multiple images to upload. They will be automatically uploaded.
           </p>
           
-          {/* Image Preview */}
           {images.length > 0 && (
             <div className="grid grid-cols-3 gap-4 mt-4">
               {images.map((url, index) => (
@@ -216,7 +201,6 @@ export default function AddProductForm({ categories, onSuccess }: AddProductForm
           )}
         </div>
 
-        {/* Description */}
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="description">Description *</Label>
           <Textarea

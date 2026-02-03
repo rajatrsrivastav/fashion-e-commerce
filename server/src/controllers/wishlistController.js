@@ -1,9 +1,5 @@
-// Wishlist management controller
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 
-const prisma = new PrismaClient();
-
-// Add item to wishlist
 const addToWishlist = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -13,7 +9,6 @@ const addToWishlist = async (req, res) => {
       return res.status(400).json({ error: 'Product ID is required' });
     }
 
-    // Check if product exists
     const product = await prisma.product.findUnique({
       where: { id: parseInt(productId) }
     });
@@ -22,7 +17,6 @@ const addToWishlist = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Check if item already in wishlist
     const existingWishlistItem = await prisma.wishlist.findUnique({
       where: {
         userId_productId: {
@@ -36,7 +30,6 @@ const addToWishlist = async (req, res) => {
       return res.status(400).json({ error: 'Item already in wishlist' });
     }
 
-    // Add item to wishlist
     const wishlistItem = await prisma.wishlist.create({
       data: {
         userId: userId,
@@ -56,7 +49,6 @@ const addToWishlist = async (req, res) => {
   }
 };
 
-// Get user's wishlist
 const getWishlist = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -81,7 +73,6 @@ const getWishlist = async (req, res) => {
   }
 };
 
-// Remove item from wishlist
 const removeFromWishlist = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -106,7 +97,6 @@ const removeFromWishlist = async (req, res) => {
   }
 };
 
-// Check if product is in wishlist
 const checkWishlistStatus = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -129,7 +119,6 @@ const checkWishlistStatus = async (req, res) => {
   }
 };
 
-// Toggle wishlist status (add if not exists, remove if exists)
 const toggleWishlist = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -139,7 +128,6 @@ const toggleWishlist = async (req, res) => {
       return res.status(400).json({ error: 'Product ID is required' });
     }
 
-    // Check if product exists
     const product = await prisma.product.findUnique({
       where: { id: parseInt(productId) }
     });
@@ -148,7 +136,6 @@ const toggleWishlist = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Check if item is in wishlist
     const existingWishlistItem = await prisma.wishlist.findUnique({
       where: {
         userId_productId: {
@@ -159,7 +146,6 @@ const toggleWishlist = async (req, res) => {
     });
 
     if (existingWishlistItem) {
-      // Remove from wishlist
       await prisma.wishlist.delete({
         where: {
           userId_productId: {
@@ -174,7 +160,6 @@ const toggleWishlist = async (req, res) => {
         isInWishlist: false
       });
     } else {
-      // Add to wishlist
       await prisma.wishlist.create({
         data: {
           userId: userId,

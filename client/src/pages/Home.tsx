@@ -9,6 +9,8 @@ import { ArrowRight, Truck, Shield, RefreshCw, Headphones } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Image } from "@unpic/react";
+import { useProducts } from "@/hooks/useApi";
 
 interface Category {
   id: number;
@@ -26,33 +28,9 @@ interface Product {
 }
 
 export default function Home() {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: products, isLoading } = useProducts();
+  const featuredProducts = products?.slice(0, 4) || [];
 
-  // Fetch products from backend
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/products`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Handle both arrow object and array responses
-        const productsArray = Array.isArray(data) ? data : data.products || [];
-        // Get first 4 products for featured section
-        setFeaturedProducts(productsArray.slice(0, 4));
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-// Features/benefits
 const features = [
   {
     icon: Truck,
@@ -128,8 +106,7 @@ const features = [
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {loading ? (
-              // Skeleton loader while fetching
+            {isLoading ? (
               Array.from({ length: 4 }).map((_, idx) => (
                 <div key={idx} className="flex flex-col gap-3">
                   <Skeleton className="aspect-[3/4] rounded-xl" />
@@ -170,8 +147,8 @@ const features = [
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
-              <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8" alt="New Arrival" className="w-40 h-52 object-cover rounded-xl" />
-              <img src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04" alt="New Arrival" className="w-40 h-52 object-cover rounded-xl mt-8" />
+              <Image src="https://images.unsplash.com/photo-1441986300917-64674bd600d8" alt="New Arrival" layout="constrained" width={160} height={208} className="object-cover rounded-xl" />
+              <Image src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04" alt="New Arrival" layout="constrained" width={160} height={208} className="object-cover rounded-xl mt-8" />
             </div>
           </div>
         </div>

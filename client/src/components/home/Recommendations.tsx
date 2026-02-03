@@ -10,26 +10,11 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProducts } from "@/hooks/useApi";
 
 export default function Recommendations() {
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/products`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.products) {
-          setProducts(data.products);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching recommended products:', err);
-        setLoading(false);
-      });
-  }, []);
+  const { data: products, isLoading } = useProducts();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -41,7 +26,6 @@ export default function Recommendations() {
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       
-      // Show button when scrolled down more than 300px or near bottom
       const shouldShow = scrollTop > 300 || (scrollTop + windowHeight) >= (documentHeight - 100);
       setShowScrollTop(shouldShow);
     };
@@ -67,8 +51,7 @@ export default function Recommendations() {
             className="w-full"
           >
             <CarouselContent className="-ml-4">
-              {loading ? (
-                // Skeleton loader while fetching
+              {isLoading ? (
                 Array.from({ length: 4 }).map((_, idx) => (
                   <CarouselItem key={idx} className="pl-4 md:basis-1/2 lg:basis-1/4">
                     <div className="flex flex-col gap-3">
