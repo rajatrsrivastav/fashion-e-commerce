@@ -55,15 +55,7 @@ app.use('/orders', orderRoutes);
 // Health check route - to verify server is running
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'E-commerce API is running!',
-    endpoints: {
-      admin: '/admin/login, /admin/register, /admin/products, /admin/categories',
-      auth: '/auth/login, /auth/register, /auth/profile',
-      products: '/products, /products/:id',
-      categories: '/categories',
-      cart: '/cart',
-      wishlist: '/wishlist'
-    }
+    message: 'E-commerce API is running!'
   });
 });
 
