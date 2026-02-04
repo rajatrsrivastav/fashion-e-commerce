@@ -70,7 +70,7 @@ export default function Checkout() {
   const { data: cartData, isLoading: cartLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}cart`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -95,7 +95,7 @@ export default function Checkout() {
   const createOrderMutation = useMutation({
     mutationFn: async (address: string) => {
       if (isBuyNow && buyNowItem) {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/orders/direct`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}orders/direct`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -116,7 +116,7 @@ export default function Checkout() {
         return response.json();
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/orders`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
