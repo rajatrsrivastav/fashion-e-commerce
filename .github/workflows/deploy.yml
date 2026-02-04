@@ -44,4 +44,4 @@ jobs:
             cd ${{ secrets.APP_DIR }}
             git pull origin main
             npm install
-            pm2 restart fashion-backend
+            pm2 restart ecommerce-backend
