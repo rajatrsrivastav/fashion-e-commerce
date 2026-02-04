@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, User, Heart, ShoppingBag, Menu, LogOut } from "lucide-react";
+import { Search, User, Heart, ShoppingBag, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Image } from "@unpic/react";
@@ -98,20 +97,6 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-8">
             <NavLinks />
           </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <div className="md:hidden">
-          <Sheet>
-            <SheetTrigger>
-              <Menu className="h-6 w-6" />
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-              <div className="flex flex-col gap-6 mt-10">
-                <NavLinks />
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
 
         {/* Actions - Right */}

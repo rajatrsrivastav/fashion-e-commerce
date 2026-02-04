@@ -37,13 +37,24 @@ interface CartItem {
 export default function Cart() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
   const { data: cartItems = [], isLoading } = useCart();
   const updateCartMutation = useUpdateCartItem();
   const removeCartMutation = useRemoveFromCart();
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to view your cart.",
+        variant: "destructive",
+      });
+      setLocation('/login');
+    }
+  }, [isAuthenticated, authLoading, setLocation, toast]);
 
   const updateQuantity = async (productId: number, newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -109,6 +120,20 @@ export default function Cart() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p>Loading your cart...</p>
           </div>
         </div>
       </div>
