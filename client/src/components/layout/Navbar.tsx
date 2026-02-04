@@ -29,7 +29,7 @@ export default function Navbar() {
   const fetchCartCount = async () => {
     try {
       const token = localStorage.getItem('userToken');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}cart`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -48,7 +48,7 @@ export default function Navbar() {
   const fetchWishlistCount = async () => {
     try {
       const token = localStorage.getItem('userToken');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}wishlist`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

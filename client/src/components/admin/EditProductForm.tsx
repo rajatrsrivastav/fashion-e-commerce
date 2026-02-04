@@ -103,7 +103,7 @@ export default function EditProductForm({ product, categories, onProductUpdated,
     try {
       const token = localStorage.getItem('adminToken');
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}admin/products/${product.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/products/${product.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

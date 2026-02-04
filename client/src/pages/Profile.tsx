@@ -46,7 +46,7 @@ export default function Profile() {
   const { data: userData, isLoading, error, refetch } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}auth/profile`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -93,7 +93,7 @@ export default function Profile() {
 
   const handleSaveProfile = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}auth/profile`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

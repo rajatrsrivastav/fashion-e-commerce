@@ -38,7 +38,7 @@ export default function Wishlist() {
   const fetchWishlistItems = async () => {
     try {
       const token = localStorage.getItem('userToken');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}wishlist`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -66,7 +66,7 @@ export default function Wishlist() {
   const removeFromWishlist = async (productId: number) => {
     try {
       const token = localStorage.getItem('userToken');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}wishlist/${productId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/wishlist/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -93,7 +93,7 @@ export default function Wishlist() {
   const addToCart = async (product: WishlistItem['product']) => {
     try {
       const token = localStorage.getItem('userToken');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}cart`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cart`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
