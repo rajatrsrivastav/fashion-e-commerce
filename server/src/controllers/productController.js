@@ -10,7 +10,7 @@ const getAllProducts = async (req, res) => {
         where.categoryId = parseInt(category);
       } else {
         where.category = {
-          name: category
+          name: category,
         };
       }
     }
@@ -18,15 +18,14 @@ const getAllProducts = async (req, res) => {
     const products = await prisma.product.findMany({
       where,
       include: {
-        category: true
+        category: true,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
     res.json({ products });
-
   } catch (error) {
     console.error('Get products error:', error);
     res.status(500).json({ error: 'Server error while fetching products' });
@@ -40,8 +39,8 @@ const getProductById = async (req, res) => {
     const product = await prisma.product.findUnique({
       where: { id: parseInt(id) },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     if (!product) {
@@ -49,7 +48,6 @@ const getProductById = async (req, res) => {
     }
 
     res.json({ product });
-
   } catch (error) {
     console.error('Get product error:', error);
     res.status(500).json({ error: 'Server error while fetching product' });
@@ -61,13 +59,12 @@ const getAllCategories = async (req, res) => {
     const categories = await prisma.category.findMany({
       include: {
         _count: {
-          select: { products: true }
-        }
-      }
+          select: { products: true },
+        },
+      },
     });
 
     res.json({ categories });
-
   } catch (error) {
     console.error('Get categories error:', error);
     res.status(500).json({ error: 'Server error while fetching categories' });
@@ -77,5 +74,5 @@ const getAllCategories = async (req, res) => {
 module.exports = {
   getAllProducts,
   getProductById,
-  getAllCategories
+  getAllCategories,
 };

@@ -19,7 +19,6 @@ const verifyAdmin = (req, res, next) => {
     req.admin = decoded;
 
     next();
-
   } catch (error) {
     console.error('Auth error:', error);
     return res.status(401).json({ error: 'Invalid or expired token' });
@@ -45,7 +44,6 @@ const verifyUser = (req, res, next) => {
     req.user = decoded;
 
     next();
-
   } catch (error) {
     console.error('Auth error:', error);
     return res.status(401).json({ error: 'Invalid or expired token' });

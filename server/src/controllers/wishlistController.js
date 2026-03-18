@@ -10,7 +10,7 @@ const addToWishlist = async (req, res) => {
     }
 
     const product = await prisma.product.findUnique({
-      where: { id: parseInt(productId) }
+      where: { id: parseInt(productId) },
     });
 
     if (!product) {
@@ -21,9 +21,9 @@ const addToWishlist = async (req, res) => {
       where: {
         userId_productId: {
           userId: userId,
-          productId: parseInt(productId)
-        }
-      }
+          productId: parseInt(productId),
+        },
+      },
     });
 
     if (existingWishlistItem) {
@@ -33,16 +33,15 @@ const addToWishlist = async (req, res) => {
     const wishlistItem = await prisma.wishlist.create({
       data: {
         userId: userId,
-        productId: parseInt(productId)
+        productId: parseInt(productId),
       },
-      include: { product: true }
+      include: { product: true },
     });
 
     res.json({
       message: 'Item added to wishlist successfully',
-      wishlistItem
+      wishlistItem,
     });
-
   } catch (error) {
     console.error('Add to wishlist error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -58,15 +57,14 @@ const getWishlist = async (req, res) => {
       include: {
         product: {
           include: {
-            category: true
-          }
-        }
+            category: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     res.json({ wishlistItems });
-
   } catch (error) {
     console.error('Get wishlist error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -81,8 +79,8 @@ const removeFromWishlist = async (req, res) => {
     const result = await prisma.wishlist.deleteMany({
       where: {
         userId: userId,
-        productId: parseInt(productId)
-      }
+        productId: parseInt(productId),
+      },
     });
 
     if (result.count === 0) {
@@ -90,7 +88,6 @@ const removeFromWishlist = async (req, res) => {
     }
 
     res.json({ message: 'Item removed from wishlist successfully' });
-
   } catch (error) {
     console.error('Remove from wishlist error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -106,13 +103,12 @@ const checkWishlistStatus = async (req, res) => {
       where: {
         userId_productId: {
           userId: userId,
-          productId: parseInt(productId)
-        }
-      }
+          productId: parseInt(productId),
+        },
+      },
     });
 
     res.json({ isInWishlist: !!wishlistItem });
-
   } catch (error) {
     console.error('Check wishlist status error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -129,7 +125,7 @@ const toggleWishlist = async (req, res) => {
     }
 
     const product = await prisma.product.findUnique({
-      where: { id: parseInt(productId) }
+      where: { id: parseInt(productId) },
     });
 
     if (!product) {
@@ -140,9 +136,9 @@ const toggleWishlist = async (req, res) => {
       where: {
         userId_productId: {
           userId: userId,
-          productId: parseInt(productId)
-        }
-      }
+          productId: parseInt(productId),
+        },
+      },
     });
 
     if (existingWishlistItem) {
@@ -150,29 +146,28 @@ const toggleWishlist = async (req, res) => {
         where: {
           userId_productId: {
             userId: userId,
-            productId: parseInt(productId)
-          }
-        }
+            productId: parseInt(productId),
+          },
+        },
       });
 
       res.json({
         message: 'Item removed from wishlist',
-        isInWishlist: false
+        isInWishlist: false,
       });
     } else {
       await prisma.wishlist.create({
         data: {
           userId: userId,
-          productId: parseInt(productId)
-        }
+          productId: parseInt(productId),
+        },
       });
 
       res.json({
         message: 'Item added to wishlist',
-        isInWishlist: true
+        isInWishlist: true,
       });
     }
-
   } catch (error) {
     console.error('Toggle wishlist error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -184,5 +179,5 @@ module.exports = {
   getWishlist,
   removeFromWishlist,
   checkWishlistStatus,
-  toggleWishlist
+  toggleWishlist,
 };

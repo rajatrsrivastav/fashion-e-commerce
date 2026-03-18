@@ -9,33 +9,33 @@ const getUserOrders = async (req, res) => {
       include: {
         items: {
           include: {
-            product: true
-          }
-        }
+            product: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
-    const formattedOrders = orders.map(order => ({
+    const formattedOrders = orders.map((order) => ({
       id: `VYR-${order.createdAt.getFullYear()}-${String(order.id).padStart(6, '0')}`,
       date: order.createdAt.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
       }),
       status: order.status.toLowerCase(),
       total: order.totalAmount,
-      items: order.items.map(item => ({
+      items: order.items.map((item) => ({
         id: item.id.toString(),
         title: item.product.name,
         image: item.product.images[0] || '',
         size: item.size,
         color: item.color,
         quantity: item.quantity,
-        price: item.price
+        price: item.price,
       })),
       address: order.shippingAddress,
-      trackingSteps: generateTrackingSteps(order.status, order.createdAt)
+      trackingSteps: generateTrackingSteps(order.status, order.createdAt),
     }));
 
     res.json(formattedOrders);
@@ -56,7 +56,7 @@ const createOrder = async (req, res) => {
 
     const cartItems = await prisma.cart.findMany({
       where: { userId },
-      include: { product: true }
+      include: { product: true },
     });
 
     if (cartItems.length === 0) {
@@ -66,13 +66,13 @@ const createOrder = async (req, res) => {
     for (const item of cartItems) {
       if (item.quantity > item.product.stock) {
         return res.status(400).json({
-          error: `Insufficient stock for ${item.product.name}. Available: ${item.product.stock}`
+          error: `Insufficient stock for ${item.product.name}. Available: ${item.product.stock}`,
         });
       }
     }
 
     const totalAmount = cartItems.reduce((total, item) => {
-      return total + (item.product.price * item.quantity);
+      return total + item.product.price * item.quantity;
     }, 0);
 
     const result = await prisma.$transaction(async (prisma) => {
@@ -83,31 +83,31 @@ const createOrder = async (req, res) => {
           shippingAddress,
           status: 'PENDING',
           items: {
-            create: cartItems.map(item => ({
+            create: cartItems.map((item) => ({
               productId: item.productId,
               quantity: item.quantity,
               price: item.product.price,
               size: item.size,
-              color: item.color
-            }))
-          }
+              color: item.color,
+            })),
+          },
         },
         include: {
           items: {
-            include: { product: true }
-          }
-        }
+            include: { product: true },
+          },
+        },
       });
 
       for (const item of cartItems) {
         await prisma.product.update({
           where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } }
+          data: { stock: { decrement: item.quantity } },
         });
       }
 
       await prisma.cart.deleteMany({
-        where: { userId }
+        where: { userId },
       });
 
       return order;
@@ -118,21 +118,21 @@ const createOrder = async (req, res) => {
       date: result.createdAt.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
       }),
       status: result.status.toLowerCase(),
       total: result.totalAmount,
-      items: result.items.map(item => ({
+      items: result.items.map((item) => ({
         id: item.id.toString(),
         title: item.product.name,
         image: item.product.images[0] || '',
         size: item.size,
         color: item.color,
         quantity: item.quantity,
-        price: item.price
+        price: item.price,
       })),
       address: result.shippingAddress,
-      trackingSteps: generateTrackingSteps(result.status, result.createdAt)
+      trackingSteps: generateTrackingSteps(result.status, result.createdAt),
     };
 
     res.status(201).json(formattedOrder);
@@ -144,19 +144,27 @@ const createOrder = async (req, res) => {
 
 function generateTrackingSteps(status, createdAt) {
   const steps = [
-    { status: 'Order Placed', date: createdAt.toLocaleDateString(), completed: true },
-    { status: 'Processing', date: createdAt.toLocaleDateString(), completed: false },
+    {
+      status: 'Order Placed',
+      date: createdAt.toLocaleDateString(),
+      completed: true,
+    },
+    {
+      status: 'Processing',
+      date: createdAt.toLocaleDateString(),
+      completed: false,
+    },
     { status: 'Shipped', date: '', completed: false },
     { status: 'Out for Delivery', date: '', completed: false },
-    { status: 'Delivered', date: '', completed: false }
+    { status: 'Delivered', date: '', completed: false },
   ];
 
   const statusIndex = {
-    'PENDING': 0,
-    'PROCESSING': 1,
-    'SHIPPED': 2,
-    'DELIVERED': 4,
-    'CANCELLED': -1
+    PENDING: 0,
+    PROCESSING: 1,
+    SHIPPED: 2,
+    DELIVERED: 4,
+    CANCELLED: -1,
   };
 
   const currentIndex = statusIndex[status] || 0;
@@ -183,11 +191,13 @@ const createDirectOrder = async (req, res) => {
     }
 
     if (!productId || !quantity || quantity < 1) {
-      return res.status(400).json({ error: 'Product ID and valid quantity are required' });
+      return res
+        .status(400)
+        .json({ error: 'Product ID and valid quantity are required' });
     }
 
     const product = await prisma.product.findUnique({
-      where: { id: productId }
+      where: { id: productId },
     });
 
     if (!product) {
@@ -196,7 +206,7 @@ const createDirectOrder = async (req, res) => {
 
     if (quantity > product.stock) {
       return res.status(400).json({
-        error: `Insufficient stock for ${product.name}. Available: ${product.stock}`
+        error: `Insufficient stock for ${product.name}. Available: ${product.stock}`,
       });
     }
 
@@ -215,20 +225,20 @@ const createDirectOrder = async (req, res) => {
               quantity: quantity,
               price: product.price,
               size: 'M',
-              color: 'Standard'
-            }
-          }
+              color: 'Standard',
+            },
+          },
         },
         include: {
           items: {
-            include: { product: true }
-          }
-        }
+            include: { product: true },
+          },
+        },
       });
 
       await prisma.product.update({
         where: { id: productId },
-        data: { stock: { decrement: quantity } }
+        data: { stock: { decrement: quantity } },
       });
 
       return order;
@@ -239,21 +249,21 @@ const createDirectOrder = async (req, res) => {
       date: result.createdAt.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
       }),
       status: result.status.toLowerCase(),
       total: result.totalAmount,
-      items: result.items.map(item => ({
+      items: result.items.map((item) => ({
         id: item.id.toString(),
         title: item.product.name,
         image: item.product.images[0] || '',
         size: item.size,
         color: item.color,
         quantity: item.quantity,
-        price: item.price
+        price: item.price,
       })),
       address: result.shippingAddress,
-      trackingSteps: generateTrackingSteps(result.status, result.createdAt)
+      trackingSteps: generateTrackingSteps(result.status, result.createdAt),
     };
 
     res.status(201).json(formattedOrder);
@@ -266,5 +276,5 @@ const createDirectOrder = async (req, res) => {
 module.exports = {
   getUserOrders,
   createOrder,
-  createDirectOrder
+  createDirectOrder,
 };

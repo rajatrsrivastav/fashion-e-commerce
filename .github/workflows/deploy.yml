@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -22,6 +25,11 @@ jobs:
       
       - name: Install Dependencies
         run: npm install
+
+      - name: Check Code Quality
+        run: |
+          npm run lint
+          npm run format:check
       
       - name: Run Tests (if available)
         run: npm test || echo "No tests specified"

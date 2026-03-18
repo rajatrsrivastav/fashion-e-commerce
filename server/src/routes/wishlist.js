@@ -11,6 +11,10 @@ router.get('/', verifyUser, wishlistController.getWishlist);
 
 router.delete('/:productId', verifyUser, wishlistController.removeFromWishlist);
 
-router.get('/:productId/check', verifyUser, wishlistController.checkWishlistStatus);
+router.get(
+  '/:productId/check',
+  verifyUser,
+  wishlistController.checkWishlistStatus
+);
 
 module.exports = router;

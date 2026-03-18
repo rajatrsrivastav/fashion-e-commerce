@@ -11,7 +11,7 @@ const login = async (req, res) => {
     }
 
     const admin = await prisma.admin.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (!admin) {
@@ -33,9 +33,8 @@ const login = async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      admin: { id: admin.id, email: admin.email }
+      admin: { id: admin.id, email: admin.email },
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Server error during login' });
@@ -51,7 +50,7 @@ const register = async (req, res) => {
     }
 
     const existingAdmin = await prisma.admin.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (existingAdmin) {
@@ -63,15 +62,14 @@ const register = async (req, res) => {
     const admin = await prisma.admin.create({
       data: {
         email,
-        password: hashedPassword
-      }
+        password: hashedPassword,
+      },
     });
 
     res.status(201).json({
       message: 'Admin registered successfully',
-      admin: { id: admin.id, email: admin.email }
+      admin: { id: admin.id, email: admin.email },
     });
-
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ error: 'Server error during registration' });
@@ -97,18 +95,17 @@ const addProduct = async (req, res) => {
         price: parseFloat(price),
         images,
         stock: parseInt(stock),
-        categoryId: parseInt(categoryId)
+        categoryId: parseInt(categoryId),
       },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     res.status(201).json({
       message: 'Product added successfully',
-      product
+      product,
     });
-
   } catch (error) {
     console.error('Add product error:', error);
     res.status(500).json({ error: 'Server error while adding product' });
@@ -128,18 +125,17 @@ const updateProduct = async (req, res) => {
         price: parseFloat(price),
         images,
         stock: parseInt(stock),
-        categoryId: parseInt(categoryId)
+        categoryId: parseInt(categoryId),
       },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     res.json({
       message: 'Product updated successfully',
-      product
+      product,
     });
-
   } catch (error) {
     console.error('Update product error:', error);
     res.status(500).json({ error: 'Server error while updating product' });
@@ -151,11 +147,10 @@ const deleteProduct = async (req, res) => {
     const { id } = req.params;
 
     await prisma.product.delete({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id) },
     });
 
     res.json({ message: 'Product deleted successfully' });
-
   } catch (error) {
     console.error('Delete product error:', error);
     res.status(500).json({ error: 'Server error while deleting product' });
@@ -166,15 +161,14 @@ const getAllProducts = async (req, res) => {
   try {
     const products = await prisma.product.findMany({
       include: {
-        category: true
+        category: true,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
     res.json({ products });
-
   } catch (error) {
     console.error('Get products error:', error);
     res.status(500).json({ error: 'Server error while fetching products' });
@@ -190,14 +184,13 @@ const addCategory = async (req, res) => {
     }
 
     const category = await prisma.category.create({
-      data: { name }
+      data: { name },
     });
 
     res.status(201).json({
       message: 'Category added successfully',
-      category
+      category,
     });
-
   } catch (error) {
     console.error('Add category error:', error);
     res.status(500).json({ error: 'Server error while adding category' });
@@ -209,7 +202,6 @@ const getAllCategories = async (req, res) => {
     const categories = await prisma.category.findMany();
 
     res.json({ categories });
-
   } catch (error) {
     console.error('Get categories error:', error);
     res.status(500).json({ error: 'Server error while fetching categories' });
@@ -224,5 +216,5 @@ module.exports = {
   deleteProduct,
   getAllProducts,
   addCategory,
-  getAllCategories
+  getAllCategories,
 };

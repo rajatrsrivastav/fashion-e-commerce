@@ -13,20 +13,24 @@ const orderRoutes = require('./routes/orders');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = (process.env.FRONTEND_URLS || '').split(',').map(url => url.trim());
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['ETag', 'Last-Modified']
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowedOrigins = (process.env.FRONTEND_URLS || '')
+        .split(',')
+        .map((url) => url.trim());
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['ETag', 'Last-Modified'],
+  })
+);
 
 app.use(express.json());
 
@@ -51,7 +55,7 @@ app.use('/orders', orderRoutes);
 
 app.get('/', (req, res) => {
   res.json({
-    message: 'Fashion E-commerce API is running!'
+    message: 'Fashion E-commerce API is running!',
   });
 });
 
@@ -59,6 +63,7 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ error: 'Something went wrong!' });
