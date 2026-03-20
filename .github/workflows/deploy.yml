@@ -52,6 +52,11 @@ jobs:
             set -e
             cd ${{ secrets.APP_DIR }}
             git pull origin main
-            cd server
+            
+            # Check if server directory exists
+            if [ -d "server" ]; then
+              cd server
+            fi
+            
             npm install
             pm2 restart ecommerce-backend
