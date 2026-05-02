@@ -5,9 +5,12 @@ module.exports = {
   transform: {},
   reporters: [
     'default',
-    ['jest-junit', {
-      outputDirectory: './test-results',
-      outputName: 'server-results.xml',
-    }]
+    [
+      'jest-junit',
+      {
+        outputDirectory: './test-results',
+        outputName: 'server-results.xml',
+      },
+    ],
   ],
 };
