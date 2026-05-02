@@ -160,8 +160,11 @@ jobs:
         run: npm run build
 
       - name: Sync artifacts to S3
-        env:
-          BUCKET_NAME: ${{ needs.terraform.outputs.bucket_name }}
         run: |
+          BUCKET_NAME="${{ needs.terraform.outputs.bucket_name }}"
+          if [ -z "$BUCKET_NAME" ]; then
+            BUCKET_NAME="${{ secrets.BUCKET_NAME }}"
+          fi
+          echo "Using bucket: $BUCKET_NAME"
           aws s3 sync client/dist s3://$BUCKET_NAME/frontend/ --delete
           echo "Build artifacts synced to S3 bucket: $BUCKET_NAME"
