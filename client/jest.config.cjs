@@ -10,5 +10,12 @@ module.exports = {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: '<rootDir>/tsconfig.test.json'
     }]
-  }
+  },
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: './test-results',
+      outputName: 'client-results.xml',
+    }]
+  ],
 };
