@@ -7,7 +7,7 @@ services:
       - /app/node_modules
     container_name: fashion_backend
     ports:
-      - "4000:4000"   # Backend port
+      - "4000:4000"
     environment:
       DATABASE_URL: "postgresql://neondb_owner:npg_2uU3ogeWBFwT@ep-holy-scene-a1c4gjwd-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
       JWT_SECRET: "your-secret-key-change-this-in-production"

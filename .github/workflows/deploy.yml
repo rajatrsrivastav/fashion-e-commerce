@@ -1,7 +1,10 @@
-name: Deploy to AWS
+name: CI/CD Pipeline - Terraform and ECS Fargate
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
@@ -14,14 +17,15 @@ env:
   BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
 
 jobs:
-  test:
+  run-tests:
+    name: Phase 1 - Run Tests
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -38,44 +42,129 @@ jobs:
         working-directory: server
         run: npm ci
 
-      - name: Run client tests
+      - name: Run client tests and generate report
         working-directory: client
-        run: npm test -- --ci
+        run: npm test -- --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./test-results
+          JEST_JUNIT_OUTPUT_NAME: client-results.xml
 
-      - name: Run server tests
+      - name: Run server lint, tests, and generate report
         working-directory: server
         run: |
           npm run lint
-          npm test -- --ci
+          npm test -- --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./test-results
+          JEST_JUNIT_OUTPUT_NAME: server-results.xml
 
-  build-and-deploy-server:
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            client/test-results/*.xml
+            server/test-results/*.xml
+
+  terraform-apply:
+    name: Phase 2 - Terraform Init Validate Plan Apply
     runs-on: ubuntu-latest
-    needs: test
+    needs: run-tests
+    if: github.event_name == 'push'
 
     steps:
-      - name: Checkout
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials for Terraform
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform plan
+        working-directory: terraform
+        run: |
+          terraform plan \
+            -var="region=${{ env.AWS_REGION }}" \
+            -var="bucket_name=${{ env.BUCKET_NAME }}"
+
+      - name: Terraform apply
+        working-directory: terraform
+        run: |
+          terraform apply -auto-approve \
+            -var="region=${{ env.AWS_REGION }}" \
+            -var="bucket_name=${{ env.BUCKET_NAME }}"
+
+  docker-build-and-push:
+    name: Phase 3A - Docker Build and Push to ECR
+    runs-on: ubuntu-latest
+    needs: terraform-apply
+    if: github.event_name == 'push'
+
+    outputs:
+      image_uri: ${{ steps.build_image.outputs.image_uri }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials for ECR
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Docker image
-        id: image
+      - name: Build Docker image
+        id: build_image
         run: |
           IMAGE_TAG=${{ github.sha }}
           IMAGE_URI=${ECR_REPO}:${IMAGE_TAG}
 
           docker build -t $IMAGE_URI ./server
-          docker push $IMAGE_URI
 
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+          echo "Built Docker image: $IMAGE_URI"
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ steps.build_image.outputs.image_uri }}
+
+  deploy-to-ecs:
+    name: Phase 3B - Deploy Service to ECS Fargate
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Configure AWS credentials for ECS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Download current ECS task definition
         run: |
@@ -90,9 +179,9 @@ jobs:
             --query "taskDefinition" \
             > task-definition.json
 
-      - name: Register new ECS task definition
+      - name: Register new ECS task definition with latest Docker image
         env:
-          IMAGE_URI: ${{ steps.image.outputs.image_uri }}
+          IMAGE_URI: ${{ needs.docker-build-and-push.outputs.image_uri }}
         run: |
           jq --arg IMAGE "$IMAGE_URI" --arg NAME "$ECS_CONTAINER_NAME" '
             .containerDefinitions = (
@@ -132,7 +221,7 @@ jobs:
 
           echo "NEW_TASK_DEFINITION_ARN=$NEW_TASK_DEFINITION_ARN" >> $GITHUB_ENV
 
-      - name: Update ECS service
+      - name: Update ECS Fargate service
         run: |
           aws ecs update-service \
             --cluster $ECS_CLUSTER \
@@ -140,30 +229,62 @@ jobs:
             --task-definition $NEW_TASK_DEFINITION_ARN \
             --force-new-deployment
 
-      - name: Wait for ECS deployment
+  verify-ecs-service:
+    name: Phase 3C - Verify ECS Service is Running
+    runs-on: ubuntu-latest
+    needs: deploy-to-ecs
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Configure AWS credentials for ECS verification
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Wait for ECS service stability
         run: |
           aws ecs wait services-stable \
             --cluster $ECS_CLUSTER \
             --services $ECS_SERVICE
 
-          echo "ECS deployment completed successfully."
+      - name: Verify at least one ECS task is running
+        run: |
+          RUNNING_TASKS=$(aws ecs list-tasks \
+            --cluster $ECS_CLUSTER \
+            --service-name $ECS_SERVICE \
+            --desired-status RUNNING \
+            --query "length(taskArns)" \
+            --output text)
 
-  deploy-client:
+          if [ "$RUNNING_TASKS" -lt 1 ]; then
+            echo "No ECS tasks are running"
+            exit 1
+          fi
+
+          echo "ECS service is running. Running tasks: $RUNNING_TASKS"
+
+  deploy-frontend-to-s3:
+    name: Optional - Deploy Frontend Build Artifacts to S3
     runs-on: ubuntu-latest
-    needs: test
+    needs: run-tests
+    if: github.event_name == 'push'
 
     steps:
-      - name: Checkout
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials for S3 deployment
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -174,11 +295,11 @@ jobs:
         working-directory: client
         run: npm ci
 
-      - name: Build client
+      - name: Build frontend
         working-directory: client
         run: npm run build
 
-      - name: Sync frontend to S3
+      - name: Sync frontend artifacts to S3
         run: |
           aws s3 sync client/dist s3://$BUCKET_NAME/frontend/ --delete
           echo "Frontend deployed to s3://$BUCKET_NAME/frontend/"
